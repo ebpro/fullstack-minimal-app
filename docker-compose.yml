@@ -1,0 +1,143 @@
+# =============================================================================
+# Docker Compose Configuration for Minimal Full-Stack App
+# Services: MySQL, Backend (Express), Frontend (React + Vite)
+# ==============================================================================
+
+services:
+  # ============================================================================
+  # MySQL Database Service
+  # ============================================================================
+  mysql:
+    image: mysql:8.0
+    restart: always
+    # Parameters for MySQL via environment variables with defaults
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-minimal_app_db}
+      MYSQL_USER: ${MYSQL_USER:-appuser}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-apppassword}
+    
+    # ⚠️  TEACHING NOTE - Port Mapping
+    # This exposes MySQL to your host machine (localhost:3306)
+    # Useful for: Running backend manually with `npm run dev` outside Docker
+    # Useful for: Using database tools (MySQL Workbench, DBeaver, etc.)
+    # 
+    # ⚠️  SECURITY WARNING: Remove this port mapping in production!
+    # Services inside Docker communicate via network (backend uses 'mysql:3306')
+    # Exposing database ports to the internet is a security risk.
+    ports:
+      - '3306:3306'
+    
+    volumes:
+      # Named volume: persists database data across container restarts
+      - db_data:/var/lib/mysql
+      # Initialization script: runs only on first container start (when db_data is empty)
+      # Remove volumes to re-run init script. Be careful: this will erase existing data!      
+      # 'docker-compose down -v' (to remove ALL the volumes for the project)
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    
+    # Health check: ensures MySQL is ready before dependent services start
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u$MYSQL_USER -p$MYSQL_PASSWORD || exit 1"]
+      interval: 10s        # Check every 10 seconds
+      timeout: 5s          # Wait 5 seconds for response
+      retries: 5           # Try 5 times before marking unhealthy
+      start_period: 10s    # Grace period for MySQL initialization (first start takes longer)
+
+  # ============================================================================
+  # Backend Service (Express API)
+  # ============================================================================
+  backend:
+    build:
+      context: .              # Build context is repo root (to access both backend/ and frontend/)
+      # Specify Dockerfile for backend service. This is important when multiple services have different Dockerfiles.
+      dockerfile: backend/Dockerfile
+    # 🔗 KEY CONCEPT: Service Dependencies with Health Checks
+    # Wait for MySQL to be HEALTHY before starting backend
+    # This prevents "connection refused" errors during startup
+    # Note: mysql2 connection pool handles retries automatically if needed
+    depends_on:
+      mysql:
+        condition: service_healthy
+    
+    # User mapping: run as node user (UID 1000) for better security and to avoid permission issues
+    # This matches the 'node' user created in the Node.js Docker image
+    user: "node"
+    
+    # Health check: used by frontend's depends_on and for monitoring
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:4000/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    
+    ports:
+      - '4000:4000'           # Expose API to host (browser and manual testing)
+    
+    restart: unless-stopped   # Auto-restart on failure (but not if manually stopped)
+    
+    # 🔄 Development Volumes: Enable hot-reload without rebuilding container
+    volumes:
+      - ./backend:/usr/src/app:rw                           # Mount source code (changes trigger nodemon reload)
+      - backend_node_modules:/usr/src/app/node_modules      # Preserve container's node_modules (avoid host conflicts)
+    
+    # 🌍 Environment Variables: Override backend/.env for Docker network
+    # Note: DB_HOST=mysql (service name) not 'localhost' - Docker network DNS
+    environment:
+      - DB_HOST=mysql                                       # Service name (Docker network DNS)
+      - DB_PORT=${DB_PORT:-3306}                           # Use default 3306 (internal port, not host mapping)
+      - DB_USER=${MYSQL_USER:-appuser}                     # Match MySQL service credentials
+      - DB_PASSWORD=${MYSQL_PASSWORD:-apppassword}
+      - DB_NAME=${MYSQL_DATABASE:-minimal_app_db}
+
+  # ============================================================================
+  # Frontend Service (React + Vite)
+  # ============================================================================
+  frontend:
+    build:
+      context: .              # Build context is repo root (for package-lock.json access)
+      dockerfile: frontend/Dockerfile
+    
+    # User mapping: run as node user for consistency and security
+    user: "node"
+    
+    # Wait for backend to be healthy before starting frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    
+    ports:
+      - '5173:5173'           # Expose Vite dev server to host browser
+    
+    restart: unless-stopped
+    
+    # Development volumes: hot-reload React changes
+    volumes:
+      - ./frontend:/usr/src/app:rw
+      - frontend_node_modules:/usr/src/app/node_modules
+    
+    # ⚡ IMPORTANT: Frontend-to-Backend Communication
+    # The browser (running on your HOST machine) makes API calls
+    # Therefore: VITE_BACKEND_URL must use 'localhost', NOT 'backend'
+    # 
+    # - http://localhost:4000 ✅ (browser can reach this)
+    # - http://backend:4000   ❌ (Docker service name, not reachable from host browser)
+    # 
+    # Exception: In production with reverse proxy, both would be same domain
+    environment:
+      - VITE_BACKEND_URL=${VITE_BACKEND_URL:-http://localhost:4000}
+
+# ==============================================================================
+# Volumes: Persist data across container restarts
+# ==============================================================================
+volumes:
+  db_data:                    # MySQL data persistence (survives container deletion)
+  backend_node_modules:       # Isolate backend node_modules from host filesystem
+  frontend_node_modules:      # Isolate frontend node_modules from host filesystem
+
+# ==============================================================================
+# Network: All services communicate via this Docker network
+# ==============================================================================
+networks:
+  default:
+    name: minimal_app_net     # Named network (easier to identify in `docker network ls`)

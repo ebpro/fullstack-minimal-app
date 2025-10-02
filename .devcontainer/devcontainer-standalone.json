@@ -1,0 +1,108 @@
+// ==============================================================================
+// Alternative Dev Container Configuration (Standalone - No Docker Compose)
+// ==============================================================================
+// Purpose:
+// - Simpler devcontainer setup without docker-compose orchestration
+// - Runs only the Node.js development environment
+// - Students manage MySQL separately (local installation or Docker command)
+//
+// Use this configuration if:
+// - You want a lighter setup without full docker-compose
+// - You already have MySQL running locally
+// - You want to focus on coding without container orchestration
+//
+// To use this instead of devcontainer.json:
+// 1. Rename devcontainer.json to devcontainer-compose.json
+// 2. Rename this file to devcontainer.json
+// 3. Reopen in container
+//
+// Quick Start:
+// 1. Ensure MySQL is running locally on port 3306
+// 2. Open this folder in VS Code
+// 3. Click "Reopen in Container"
+// 4. Run: npm install
+// 5. Create backend/.env with your MySQL credentials
+// 6. Start dev servers: npm run dev
+// ==============================================================================
+{
+  "name": "Minimal Full-Stack App (Node.js + React) - Standalone",
+  
+  // Use official Node.js dev container image (Debian-based)
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-22-bullseye",
+  
+  // Features to add to the base image
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest",
+      "enableNonRootDocker": "true"
+    }
+  },
+  
+  // Mount the project directory
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  
+  // Forward ports for local development
+  "forwardPorts": [5173, 4000, 3306],
+  
+  "portsAttributes": {
+    "5173": {
+      "label": "Frontend (Vite)",
+      "onAutoForward": "notify"
+    },
+    "4000": {
+      "label": "Backend (Express)",
+      "onAutoForward": "notify"
+    },
+    "3306": {
+      "label": "MySQL Database",
+      "onAutoForward": "ignore"
+    }
+  },
+  
+  // VS Code customizations
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.codeActionsOnSave": {
+          "source.fixAll.eslint": "explicit"
+        },
+        "editor.tabSize": 2,
+        "javascript.updateImportsOnFileMove.enabled": "always",
+        "eslint.workingDirectories": [
+          { "pattern": "./backend" },
+          { "pattern": "./frontend" }
+        ]
+      },
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "dsznajder.es7-react-js-snippets",
+        "mtxr.sqltools",
+        "mtxr.sqltools-driver-mysql",
+        "ms-azuretools.vscode-docker",
+        "eamodio.gitlens",
+        "christian-kohler.path-intellisense",
+        "formulahendry.auto-rename-tag",
+        "bradlc.vscode-tailwindcss",
+        "humao.rest-client"
+      ]
+    }
+  },
+  
+  // Install npm dependencies after container creation
+  "postCreateCommand": "npm install",
+  
+  // Friendly startup message
+  "postStartCommand": "echo '✨ Dev container ready! Run \"npm run dev\" to start development.'",
+  
+  // Run as non-root user
+  "remoteUser": "node"
+}

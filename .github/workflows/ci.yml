@@ -1,0 +1,392 @@
+# ==============================================================================
+# GitHub Actions CI Workflow for Minimal Full-Stack App (Student Notes)
+# ==============================================================================
+# Purpose:
+# - Automatically test code on every push and pull request
+# - Run linting, unit tests, and smoke tests
+# - Build Docker images to catch build failures early
+# - Ensure code quality before merging to main branches
+#
+# Teaching points:
+# - CI (Continuous Integration) runs automated checks on every code change
+# - This catches errors early before they reach production
+# - GitHub Actions uses YAML syntax for configuration
+# - Jobs can run in parallel or sequentially with dependencies
+# - Services (like MySQL) can be started as Docker containers for testing
+# - Secrets and environment variables manage sensitive data
+# - Status badges show build status on README (green = passing, red = failing)
+#
+# Workflow Triggers:
+# - Push to develop or feature/hanoi2025 branches
+# - Pull requests targeting develop branch
+# - Manual trigger (workflow_dispatch)
+#
+# How to view results:
+# 1. Go to repository on GitHub
+# 2. Click "Actions" tab
+# 3. See workflow runs and their status
+# 4. Click a run to see detailed logs
+# ==============================================================================
+
+name: CI - Build, Lint, and Test
+
+# When to run this workflow
+on:
+  # Run on pushes to these branches
+  push:
+    branches:
+      - develop
+      - feature/hanoi2025
+      - main
+  
+  # Run on pull requests targeting these branches
+  pull_request:
+    branches:
+      - develop
+      - main
+  
+  # Allow manual trigger from Actions tab
+  workflow_dispatch:
+
+# Cancel in-progress runs if a new one is triggered
+# Saves GitHub Actions minutes and speeds up feedback
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Environment variables available to all jobs
+env:
+  NODE_VERSION: '22.x'
+  DB_HOST: localhost
+  DB_PORT: 3306
+  DB_USER: testuser
+  DB_PASSWORD: testpassword
+  DB_NAME: test_db
+
+jobs:
+  # ===========================================================================
+  # Job 1: Lint Backend Code
+  # ===========================================================================
+  lint-backend:
+    name: Lint Backend (ESLint)
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Checkout code from repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      # Setup Node.js with caching for faster installs
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      # Install dependencies
+      # Teaching note: npm ci is preferred in CI (clean install from lockfile)
+      - name: Install dependencies
+        run: npm ci
+      
+      # Run ESLint on backend code
+      - name: Run ESLint
+        run: npm run lint --workspace=backend
+
+  # ===========================================================================
+  # Job 2: Lint Frontend Code
+  # ===========================================================================
+  lint-frontend:
+    name: Lint Frontend (ESLint)
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run ESLint
+        run: npm run lint --workspace=frontend
+
+  # ===========================================================================
+  # Job 3: Build Frontend
+  # ===========================================================================
+  build-frontend:
+    name: Build Frontend (Vite)
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      # Build frontend with Vite
+      # Teaching note: This catches build errors (TypeScript, import issues, etc.)
+      - name: Build frontend
+        run: npm run build --workspace=frontend
+        env:
+          # Provide backend URL for build (embedded in frontend bundle)
+          VITE_BACKEND_URL: http://localhost:4000
+      
+      # Upload build artifacts so we can inspect them if needed
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+          retention-days: 7
+
+  # ===========================================================================
+  # Job 4: Test Backend with MySQL
+  # ===========================================================================
+  test-backend:
+    name: Test Backend (Smoke Tests)
+    runs-on: ubuntu-latest
+    
+    # Start MySQL as a service container
+    # Teaching note: GitHub Actions can run services alongside your job
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: rootpassword
+          MYSQL_DATABASE: test_db
+          MYSQL_USER: testuser
+          MYSQL_PASSWORD: testpassword
+        ports:
+          - 3306:3306
+        # Health check ensures MySQL is ready before tests run
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -u$MYSQL_USER -p$MYSQL_PASSWORD"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      # Initialize database with schema and sample data
+      - name: Initialize database
+        run: |
+          mysql -h 127.0.0.1 -u testuser -ptestpassword test_db < db/init.sql
+        env:
+          MYSQL_PWD: testpassword
+      
+      # Wait for backend to start, then run smoke tests
+      # Teaching note: Smoke tests verify basic API functionality
+      - name: Start backend and run smoke tests
+        run: |
+          # Start backend in background
+          npm run start --workspace=backend &
+          BACKEND_PID=$!
+          
+          # Wait for backend to be ready (max 30 seconds)
+          echo "Waiting for backend to start..."
+          for i in {1..30}; do
+            if curl -f http://localhost:4000/health > /dev/null 2>&1; then
+              echo "Backend is ready!"
+              break
+            fi
+            echo "Waiting... ($i/30)"
+            sleep 1
+          done
+          
+          # Run smoke tests
+          npm test --workspace=backend
+          TEST_EXIT_CODE=$?
+          
+          # Stop backend
+          kill $BACKEND_PID || true
+          
+          # Exit with test result
+          exit $TEST_EXIT_CODE
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_USER: testuser
+          DB_PASSWORD: testpassword
+          DB_NAME: test_db
+          PORT: 4000
+
+  # ===========================================================================
+  # Job 5: Build Docker Images (Backend)
+  # ===========================================================================
+  docker-build-backend:
+    name: Build Backend Docker Image
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      # Setup Docker Buildx for better build performance
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      # Build backend Docker image (but don't push)
+      # Teaching note: This verifies Dockerfile syntax and build process
+      - name: Build backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./backend/Dockerfile
+          push: false
+          tags: minimal-app-backend:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ===========================================================================
+  # Job 6: Build Docker Images (Frontend)
+  # ===========================================================================
+  docker-build-frontend:
+    name: Build Frontend Docker Image
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Build frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./frontend/Dockerfile
+          push: false
+          tags: minimal-app-frontend:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ===========================================================================
+  # Job 7: Docker Compose Integration Test (Optional)
+  # ===========================================================================
+  docker-compose-test:
+    name: Docker Compose Integration Test
+    runs-on: ubuntu-latest
+    # This job only runs if all previous jobs succeed
+    needs: [lint-backend, lint-frontend, build-frontend, test-backend]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      # Build and start all services with docker-compose
+      - name: Build and start services
+        run: |
+          docker compose up --build -d
+          echo "Waiting for services to be healthy..."
+          sleep 30
+      
+      # Check service health
+      - name: Check service health
+        run: |
+          # Check backend health endpoint
+          curl -f http://localhost:4000/health || exit 1
+          
+          # Check frontend is serving content
+          curl -f http://localhost:5173 || exit 1
+          
+          # Check MySQL is accessible (via backend)
+          curl -f http://localhost:4000/api/categories || exit 1
+          
+          echo "✅ All services are healthy!"
+      
+      # Show logs if tests fail
+      - name: Show logs on failure
+        if: failure()
+        run: docker compose logs
+      
+      # Cleanup
+      - name: Stop services
+        if: always()
+        run: docker compose down -v
+
+  # ===========================================================================
+  # Job 8: Summary Report
+  # ===========================================================================
+  ci-summary:
+    name: CI Summary
+    runs-on: ubuntu-latest
+    # Run after all other jobs complete
+    needs: [lint-backend, lint-frontend, build-frontend, test-backend, docker-build-backend, docker-build-frontend, docker-compose-test]
+    if: always()
+    
+    steps:
+      - name: Check results
+        run: |
+          echo "==================================="
+          echo "CI Workflow Summary"
+          echo "==================================="
+          echo "Lint Backend: ${{ needs.lint-backend.result }}"
+          echo "Lint Frontend: ${{ needs.lint-frontend.result }}"
+          echo "Build Frontend: ${{ needs.build-frontend.result }}"
+          echo "Test Backend: ${{ needs.test-backend.result }}"
+          echo "Docker Build Backend: ${{ needs.docker-build-backend.result }}"
+          echo "Docker Build Frontend: ${{ needs.docker-build-frontend.result }}"
+          echo "Docker Compose Test: ${{ needs.docker-compose-test.result }}"
+          echo "==================================="
+          
+          # Fail if any job failed
+          if [[ "${{ needs.lint-backend.result }}" == "failure" ]] || \
+             [[ "${{ needs.lint-frontend.result }}" == "failure" ]] || \
+             [[ "${{ needs.build-frontend.result }}" == "failure" ]] || \
+             [[ "${{ needs.test-backend.result }}" == "failure" ]] || \
+             [[ "${{ needs.docker-build-backend.result }}" == "failure" ]] || \
+             [[ "${{ needs.docker-build-frontend.result }}" == "failure" ]] || \
+             [[ "${{ needs.docker-compose-test.result }}" == "failure" ]]; then
+            echo "❌ CI failed - see logs above"
+            exit 1
+          fi
+          
+          echo "✅ All CI checks passed!"
+
+# ==============================================================================
+# Extension Points for Students
+# ==============================================================================
+# EXTENSION_POINT: ci.coverage | Add code coverage reporting | intermediate
+#   - Install nyc or c8 for code coverage
+#   - Upload coverage to Codecov or Coveralls
+#   - Add coverage badge to README
+#
+# EXTENSION_POINT: ci.security | Add security scanning | intermediate
+#   - npm audit for dependency vulnerabilities
+#   - Snyk or Dependabot for automated security updates
+#   - OWASP ZAP for security testing
+#
+# EXTENSION_POINT: ci.performance | Add performance testing | advanced
+#   - Lighthouse CI for frontend performance
+#   - Load testing with k6 or Artillery
+#   - Bundle size analysis
+#
+# EXTENSION_POINT: ci.deploy | Add deployment workflow | advanced
+#   - Deploy to staging on develop branch
+#   - Deploy to production on main branch
+#   - Use Docker Hub, AWS, Azure, or Heroku
+# ==============================================================================

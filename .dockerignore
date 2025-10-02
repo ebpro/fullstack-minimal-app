@@ -1,0 +1,51 @@
+# Root .dockerignore for multi-stage Docker builds
+# Prevents sending unnecessary files to Docker build context (speeds up builds)
+
+# Node.js
+**/node_modules
+**/npm-debug.log
+**/yarn-error.log
+**/.npm
+
+# Environment files (use docker-compose env variables instead)
+**/.env
+**/.env.local
+**/.env.*.local
+
+# Build outputs
+**/dist
+**/build
+**/coverage
+
+# Version control
+.git
+.gitignore
+
+# IDE / Editor
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker files (no need to send these to build context)
+docker-compose*.yml
+Dockerfile
+.dockerignore
+
+# Documentation (not needed in containers)
+*.md
+!README.md
+
+# Testing
+**/test
+**/*.test.js
+**/*.spec.js
+
+# Logs
+**/logs
+**/*.log

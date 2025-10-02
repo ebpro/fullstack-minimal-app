@@ -1,0 +1,28 @@
+{
+  "name": "minimal-app",
+  "version": "0.1.0",
+  "private": true,
+  "studentComments": "Student notes:\n- This repository uses npm workspaces (backend + frontend). Run `npm install` at the repo root to install dependencies for both packages and hoist dev-dependencies.\n- Start both dev servers locally from the repo root with: `npm run dev`.\n- To run a single workspace: `npm run dev:backend` or `npm run dev:frontend`.\n- Docker: use `docker compose up --build` for containerized development. The compose file provides sensible defaults if no top-level .env is present.\n- If you see missing packages after switching branches or changing dependencies, rebuild images without cache and remove named node_modules volumes used by Docker.\n- Useful quick checks: backend health at http://localhost:4000/health and frontend at http://localhost:5173.\n- Read these files to learn more: README.md, TEACHING_NOTES.md, docker-compose.yml, backend/src, frontend/src.\n- Ask the instructor if you hit permission or network issues.",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "engines": {
+    "node": ">=22.20.0"
+  },
+  "scripts": {
+    "dev:backend": "npm --workspace=backend run dev",
+    "dev:frontend": "npm --workspace=frontend run dev",
+    "dev": "concurrently --names backend,frontend --prefix \"[{name}]\" \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "build:frontend": "npm --workspace=frontend run build",
+    "build": "npm run build:frontend",
+    "start:backend": "npm --workspace=backend start",
+    "start:frontend": "npm --workspace=frontend run preview",
+    "start": "concurrently --names backend,frontend --prefix \"[{name}]\" \"npm run start:backend\" \"npm run start:frontend\"",
+    "lint": "npm --workspace=backend run lint && npm --workspace=frontend run lint",
+  "test": "npm --workspace=backend test || true"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  }
+}

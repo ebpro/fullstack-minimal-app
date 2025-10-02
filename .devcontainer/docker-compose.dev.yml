@@ -1,0 +1,107 @@
+# ==============================================================================
+# Docker Compose for DevContainer Development Environment
+# ==============================================================================
+# Purpose:
+# - Provides the same service architecture as production docker-compose.yml
+# - Uses Debian-based Node.js images compatible with DevContainer features
+# - Maintains the same network and volume configuration for consistency
+#
+# Key differences from main docker-compose.yml:
+# - Uses node:22-bullseye instead of node:22-alpine for DevContainer compatibility
+# - DevContainer features (Node.js, Git, utilities) require Debian/Ubuntu base images
+# ==============================================================================
+
+version: '3.8'
+
+networks:
+  minimal_app_net:
+    driver: bridge
+
+volumes:
+  db_data:
+  backend_node_modules:
+  frontend_node_modules:
+
+services:
+  # MySQL Database (same as production)
+  mysql:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: minimal_app_db
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: apppassword
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ../db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - minimal_app_net
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u ${MYSQL_USER} -p${MYSQL_PASSWORD} || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # Backend Service (DevContainer-compatible)
+  backend:
+    # Use Debian-based Node.js image for DevContainer feature compatibility
+    image: node:22-bullseye
+    working_dir: /usr/src/app
+    
+    # Keep container running for DevContainer attachment
+    command: sleep infinity
+    
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: minimal_app_db
+      DB_USER: appuser
+      DB_PASSWORD: apppassword
+    
+    ports:
+      - "4000:4000"
+    
+    volumes:
+      # Mount the entire project root for npm workspaces
+      - ..:/usr/src/app:cached
+      # Use named volume for node_modules to avoid permission issues
+      - backend_node_modules:/usr/src/app/backend/node_modules
+      - frontend_node_modules:/usr/src/app/frontend/node_modules
+    
+    networks:
+      - minimal_app_net
+    
+    depends_on:
+      mysql:
+        condition: service_healthy
+    
+    # Run as node user for security
+    user: "1000:1000"
+
+  # Frontend Service (for completeness, though DevContainer attaches to backend)
+  frontend:
+    image: node:22-bullseye
+    working_dir: /usr/src/app/frontend
+    command: sleep infinity
+    
+    environment:
+      VITE_BACKEND_URL: http://localhost:4000
+    
+    ports:
+      - "5173:5173"
+    
+    volumes:
+      - ..:/usr/src/app:cached
+      - frontend_node_modules:/usr/src/app/frontend/node_modules
+    
+    networks:
+      - minimal_app_net
+    
+    depends_on:
+      - backend
+    
+    user: "1000:1000"
