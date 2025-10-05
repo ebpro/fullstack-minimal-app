@@ -91,6 +91,39 @@ services:
       - DB_NAME=${MYSQL_DATABASE:-minimal_app_db}
 
   # ============================================================================
+  # Scraper Service (Mock External Review API)
+  # ============================================================================
+  scraper:
+    build:
+      context: .
+      dockerfile: scraper-service/Dockerfile
+    
+    user: "node"
+    
+    # No dependency on database - standalone service
+    
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:5000/health || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    
+    ports:
+      - '5000:5000'           # Expose scraper API to host and backend
+    
+    restart: unless-stopped
+    
+    # Development volumes: hot-reload scraper changes
+    volumes:
+      - ./scraper-service:/usr/src/app:rw
+      - scraper_node_modules:/usr/src/app/node_modules
+    
+    environment:
+      - PORT=5000
+      - NODE_ENV=${NODE_ENV:-development}
+
+  # ============================================================================
   # Frontend Service (React + Vite)
   # ============================================================================
   frontend:
@@ -134,6 +167,7 @@ volumes:
   db_data:                    # MySQL data persistence (survives container deletion)
   backend_node_modules:       # Isolate backend node_modules from host filesystem
   frontend_node_modules:      # Isolate frontend node_modules from host filesystem
+  scraper_node_modules:       # Isolate scraper node_modules from host filesystem
 
 # ==============================================================================
 # Network: All services communicate via this Docker network

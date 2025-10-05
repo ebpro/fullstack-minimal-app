@@ -37,14 +37,14 @@
   
   // Use DevContainer-specific Docker Compose with Debian-based images
   // DevContainer features require Debian/Ubuntu, not Alpine Linux
-  "dockerComposeFile": "docker-compose.dev.yml",
+  "dockerComposeFile": [
+    "docker-compose.dev.yml"
+  ],
   
   // Which service to use as the main development container
-  "service": "backend",
-  
-  // Override the service command to keep container running for DevContainer
+  "service": "dev",
   "overrideCommand": true,
-  "workspaceFolder": "/usr/src/app",
+  "workspaceFolder": "/workspace",
   
   // Ports to forward from container to host
   // Teaching note: These make services accessible in your host browser
@@ -162,10 +162,7 @@
     }
   },
   
-  // Post-create command: runs ONCE after the container is created for the first time
-  // Teaching note: Install dependencies with proper permissions
-  // We use 'sudo' to temporarily elevate permissions, then fix ownership
-  "postCreateCommand": "sudo chown -R node:node /usr/src/app && npm install",
+  "postCreateCommand": "bash -lc 'set -e; if [ -f package.json ]; then if [ -f package-lock.json ]; then npm ci; else npm install; fi; fi'",
   
   // Post-start command: runs every time the container starts
   // Teaching note: This displays a helpful message in the terminal

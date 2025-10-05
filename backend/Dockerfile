@@ -1,5 +1,5 @@
 # Use official Node.js 22 image with Alpine Linux for a small footprint
-FROM node:22-alpine
+FROM node:22-bookworm-slim
 
 # Set working directory
 WORKDIR /usr/src/app
@@ -14,8 +14,10 @@ COPY backend/package.json ./backend/
 
 # Use npm ci for production-ready, reproducible builds (faster & deterministic)
 # npm ci requires package-lock.json and installs exact versions from the lockfile
-RUN npm ci --workspace=backend --include=dev --silent && \
-	apk add --no-cache curl
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends curl ca-certificates \
+	&& rm -rf /var/lib/apt/lists/* \
+	&& npm ci --workspace=backend --include=dev --silent
 
 # Optionally build frontend into /usr/src/app/public
 # Copy full frontend sources so Vite can find index.html and all assets

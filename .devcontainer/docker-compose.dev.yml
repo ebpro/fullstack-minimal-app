@@ -17,13 +17,14 @@ networks:
   minimal_app_net:
     driver: bridge
 
+
 volumes:
   db_data:
   backend_node_modules:
   frontend_node_modules:
 
 services:
-  # MySQL Database (same as production)
+  # MySQL for development (initialized from db/init.sql)
   mysql:
     image: mysql:8.0
     restart: always
@@ -46,62 +47,34 @@ services:
       retries: 5
       start_period: 10s
 
-  # Backend Service (DevContainer-compatible)
-  backend:
-    # Use Debian-based Node.js image for DevContainer feature compatibility
+  # Single Node.js container used by the DevContainer to develop backend and frontend
+  dev:
     image: node:22-bullseye
-    working_dir: /usr/src/app
-    
-    # Keep container running for DevContainer attachment
+    working_dir: /workspace
+    # Keep the container running so the DevContainer can attach
     command: sleep infinity
-    
     environment:
+      # database config for local development
       DB_HOST: mysql
       DB_PORT: 3306
       DB_NAME: minimal_app_db
       DB_USER: appuser
       DB_PASSWORD: apppassword
-    
+      # frontend dev server can use this to call the backend
+      VITE_BACKEND_URL: http://localhost:4000
     ports:
-      - "4000:4000"
-    
+      - "4000:4000" # backend
+      - "5173:5173" # vite frontend
     volumes:
-      # Mount the entire project root for npm workspaces
-      - ..:/usr/src/app:cached
-      # Use named volume for node_modules to avoid permission issues
-      - backend_node_modules:/usr/src/app/backend/node_modules
-      - frontend_node_modules:/usr/src/app/frontend/node_modules
-    
+      - ..:/workspace:cached
+      - backend_node_modules:/workspace/backend/node_modules
+      - frontend_node_modules:/workspace/frontend/node_modules
     networks:
       - minimal_app_net
-    
     depends_on:
       mysql:
         condition: service_healthy
-    
-    # Run as node user for security
-    user: "1000:1000"
-
-  # Frontend Service (for completeness, though DevContainer attaches to backend)
-  frontend:
-    image: node:22-bullseye
-    working_dir: /usr/src/app/frontend
-    command: sleep infinity
-    
-    environment:
-      VITE_BACKEND_URL: http://localhost:4000
-    
-    ports:
-      - "5173:5173"
-    
-    volumes:
-      - ..:/usr/src/app:cached
-      - frontend_node_modules:/usr/src/app/frontend/node_modules
-    
-    networks:
-      - minimal_app_net
-    
-    depends_on:
-      - backend
-    
+    # Run container processes as a non-root user (UID 1000) to match the 'node' user in the image.
+    # Using numeric UID avoids issues when the host user differs. The Dev Container will connect as
+    # the 'node' user (remoteUser) inside the container.
     user: "1000:1000"

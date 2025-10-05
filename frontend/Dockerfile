@@ -1,4 +1,4 @@
-FROM node:22-alpine
+FROM node:22-bookworm-slim
 
 WORKDIR /usr/src/app
 
@@ -25,7 +25,10 @@ COPY frontend/package.json ./frontend/
 # - If you change dependencies, re-run `npm install` at repo root and commit the
 #   updated `package-lock.json` (this project teaches why lockfiles are important).
 # ---------------------------------------------------------------------------
-RUN npm ci --workspace=frontend --include=dev --silent
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends curl ca-certificates \
+	&& rm -rf /var/lib/apt/lists/* \
+	&& npm ci --workspace=frontend --include=dev --silent
 
 
 

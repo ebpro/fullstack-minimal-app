@@ -180,21 +180,13 @@ minimal-app/
 │   │   │   └── staticServing.js  # Optional frontend serving
 │   │   └── routes/
 │   │       ├── products.js       # Product CRUD endpoints
-│   │       ├── categories.js     # Category endpoints
-│   │       └── reviews.js        # Review endpoints (Practice 4)
+│   │       └── categories.js     # Category endpoints
 │   ├── test/
 │   │   └── smoke.js              # Smoke tests with assertions
 │   ├── package.json
 │   ├── .env.example
 │   └── Dockerfile
 ├── frontend/
-│   ├── public/
-│   │   └── prototypes/           # Static HTML prototypes (Practice 1 & 2)
-│   │       ├── index.html        # Product listing prototype
-│   │       ├── product-detail.html # Product detail prototype
-│   │       ├── product-filter.html # Interactive filter (Practice 2)
-│   │       ├── product-filter.js   # JavaScript logic (Practice 2)
-│   │       └── products-data.json  # Mock data (Practice 2)
 │   ├── src/
 │   │   ├── App.jsx               # Main component (routing, health check)
 │   │   ├── main.jsx              # React entry point
@@ -202,30 +194,16 @@ minimal-app/
 │   │   └── components/
 │   │       ├── ProductList.jsx   # Product listing with pagination
 │   │       ├── ProductDetail.jsx # Single product view
-│   │       ├── ProductForm.jsx   # Create/edit form
-│   │       └── reviews/          # Review components (Practice 3)
-│   │           ├── ReviewCard.jsx
-│   │           ├── ReviewList.jsx
-│   │           ├── ReviewStats.jsx
-│   │           └── ProductReviewsPage.jsx
+│   │       └── ProductForm.jsx   # Create/edit form
 │   ├── package.json
 │   ├── .env.example
 │   └── Dockerfile
 ├── db/
-│   ├── init.sql                  # Database schema + seed data
-│   ├── schema.sql                # Reviews table schema (Practice 5)
-│   └── seed.sql                  # Sample reviews (Practice 5)
+│   └── init.sql                  # Database schema + seed data
 ├── docker-compose.yml            # Orchestration with health checks
 ├── README.md                     # This file
 └── TEACHING_NOTES.md             # Instructor guide
 ```
-
-**Structure Purpose:**
-
-- **`frontend/public/prototypes/`** - Static HTML/CSS/JS for Practices 1-2 (foundation)
-- **`frontend/src/`** - React application for Practice 3+ (modern framework)
-- **`backend/src/routes/`** - REST API endpoints organized by resource
-- **`db/`** - Database schemas and migrations
 
 ---
 
@@ -478,3 +456,5 @@ MIT License - Free for educational use
 **For Students:** Read [TEACHING_NOTES.md](./TEACHING_NOTES.md) first.
 **For Instructors:** See teaching strategies and common issues in `TEACHING_NOTES.md`.
 **Issues:** Open an issue for bugs or pedagogical improvements.
+
+
