@@ -34,25 +34,23 @@
 // ==============================================================================
 {
   "name": "Minimal Full-Stack App (Node.js + React + MySQL)",
-  
+
   // Use DevContainer-specific Docker Compose with Debian-based images
   // DevContainer features require Debian/Ubuntu, not Alpine Linux
-  "dockerComposeFile": [
-    "docker-compose.dev.yml"
-  ],
-  
+  "dockerComposeFile": ["docker-compose.dev.yml"],
+
   // Which service to use as the main development container
   "service": "dev",
   "overrideCommand": true,
   "workspaceFolder": "/workspace",
-  
+
   // Ports to forward from container to host
   // Teaching note: These make services accessible in your host browser
   // - 5173: Vite dev server (frontend with hot-reload)
   // - 4000: Express API (backend)
   // - 3306: MySQL (for database tools like MySQL Workbench)
   "forwardPorts": [5173, 4000, 3306],
-  
+
   // Port attributes: labels and actions for forwarded ports
   "portsAttributes": {
     "5173": {
@@ -68,7 +66,7 @@
       "onAutoForward": "ignore"
     }
   },
-  
+
   // VS Code customizations: settings and extensions
   "customizations": {
     "vscode": {
@@ -82,23 +80,23 @@
         },
         "editor.tabSize": 2,
         "editor.insertSpaces": true,
-        
+
         // JavaScript/React settings
         "javascript.updateImportsOnFileMove.enabled": "always",
         "javascript.suggest.autoImports": true,
-        
+
         // ESLint settings
         "eslint.validate": ["javascript", "javascriptreact"],
         "eslint.workingDirectories": [
           { "pattern": "./backend" },
           { "pattern": "./frontend" }
         ],
-        
+
         // File associations
         "files.associations": {
           "*.jsx": "javascriptreact"
         },
-        
+
         // Terminal settings
         "terminal.integrated.defaultProfile.linux": "zsh",
         "terminal.integrated.profiles.linux": {
@@ -107,38 +105,38 @@
           }
         }
       },
-      
+
       // Extensions to install inside the container
       // Teaching note: These provide IntelliSense, linting, debugging, and more
       "extensions": [
         // JavaScript/Node.js essentials
-        "dbaeumer.vscode-eslint",           // ESLint integration
-        "esbenp.prettier-vscode",           // Code formatter
-        
+        "dbaeumer.vscode-eslint", // ESLint integration
+        "esbenp.prettier-vscode", // Code formatter
+
         // React development
-        "dsznajder.es7-react-js-snippets",  // React snippets
-        
+        "dsznajder.es7-react-js-snippets", // React snippets
+
         // Database tools
-        "mtxr.sqltools",                     // SQL client
-        "mtxr.sqltools-driver-mysql",        // MySQL driver for SQLTools
-        
+        "mtxr.sqltools", // SQL client
+        "mtxr.sqltools-driver-mysql", // MySQL driver for SQLTools
+
         // Docker support
-        "ms-azuretools.vscode-docker",       // Docker file support and management
-        
+        "ms-azuretools.vscode-docker", // Docker file support and management
+
         // Git integration
-        "eamodio.gitlens",                   // Enhanced Git features
-        
+        "eamodio.gitlens", // Enhanced Git features
+
         // Utilities
         "christian-kohler.path-intellisense", // Auto-complete file paths
-        "formulahendry.auto-rename-tag",      // Auto-rename paired HTML/JSX tags
-        "bradlc.vscode-tailwindcss",          // Tailwind CSS IntelliSense
-        
+        "formulahendry.auto-rename-tag", // Auto-rename paired HTML/JSX tags
+        "bradlc.vscode-tailwindcss", // Tailwind CSS IntelliSense
+
         // REST API testing (optional but useful)
-        "humao.rest-client"                   // Send HTTP requests from .http files
+        "humao.rest-client" // Send HTTP requests from .http files
       ]
     }
   },
-  
+
   // Features: additional tools and runtimes to install in the dev container
   // Teaching note: These are installed using Dev Container Features (pre-packaged scripts)
   "features": {
@@ -148,12 +146,13 @@
       "nodeGypDependencies": true,
       "installYarnUsingApt": false
     },
-    
+
     // Git (for version control inside container)
     "ghcr.io/devcontainers/features/git:1": {
-      "version": "latest"
+      "version": "latest",
+      "ppa": false
     },
-    
+
     // Common utilities (curl, wget, zip, etc.)
     "ghcr.io/devcontainers/features/common-utils:2": {
       "installZsh": true,
@@ -161,25 +160,30 @@
       "upgradePackages": true
     }
   },
-  
-  "postCreateCommand": "bash -lc 'set -e; if [ -f package.json ]; then if [ -f package-lock.json ]; then npm ci; else npm install; fi; fi'",
-  
+
+  "postCreateCommand": "chmod +x /workspace/.devcontainer/post-create-setup.sh && /workspace/.devcontainer/post-create-setup.sh",
+
   // Post-start command: runs every time the container starts
-  // Teaching note: This displays a helpful message in the terminal
-  "postStartCommand": "echo '🚀 Dev container ready! Run \"npm run dev\" to start both frontend and backend servers.'",
-  
+  "postStartCommand": "echo '🚀 Ready! Run: npm run dev'",
+
   // Remote user: run VS Code server as this user inside the container
   // Using 'node' user (non-root) for better security
   "remoteUser": "node",
-  
+
   // Container environment variables
   "containerEnv": {
-    "npm_config_cache": "/home/node/.npm"
+    "npm_config_cache": "/home/node/.npm",
+    // Git configuration
+    "GIT_EDITOR": "code --wait"
   },
-  
+
   // Mount the Docker socket so you can run Docker commands inside the container
   // Teaching note: This allows running 'docker compose' commands from inside the dev container
   "mounts": [
-    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
+    // Mount SSH keys for Git authentication (if they exist)
+    "source=${localEnv:HOME}/.ssh,target=/home/node/.ssh,type=bind,consistency=cached",
+    // Mount Git config for seamless Git usage
+    "source=${localEnv:HOME}/.gitconfig,target=/home/node/.gitconfig,type=bind,consistency=cached"
   ]
 }

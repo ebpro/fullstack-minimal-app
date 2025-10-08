@@ -221,6 +221,22 @@ Or use SQLTools extension in VS Code (Cmd/Ctrl+Shift+P → "SQLTools: Add New Co
 - If needed, fix permissions: `sudo chown -R node:node /usr/src/app`
 - On host: ensure project directory has correct permissions
 
+### Git Authentication Issues
+
+**Problem**: Git asks for credentials repeatedly or SSH authentication fails
+
+**Solutions**:
+- **For HTTPS repos**: Git will cache credentials for 1 hour. Use a personal access token instead of password
+- **For SSH repos**: Ensure your SSH keys exist in `~/.ssh/` on your host machine
+- Check Git configuration: `git config --global --list`
+- Set user info if missing:
+  ```bash
+  git config --global user.name "Your Name"
+  git config --global user.email "your.email@example.com"
+  ```
+- For SSH key issues: `ssh -T git@github.com` to test SSH connection
+- Rebuild container if Git setup seems broken: `Dev Containers: Rebuild Container`
+
 ## 📚 Learning Resources
 
 ### Dev Containers

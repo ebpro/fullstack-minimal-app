@@ -2,7 +2,130 @@
 
 ## Common Issues and Solutions
 
-### 1. DevContainer Features Not Compatible with Alpine Linux
+### 1. Git Repository Not Found Issues
+
+**Problem**: Git commands fail with "fatal: not a git repository" errors, especially during container initialization.
+
+**Symptoms**:
+- `fatal: not a git repository: /workspace/../.git/modules/fullstack-minimal-app`
+- `fatal: not a git repository` when running git commands
+- PostCreateCommand fails with exit code 128
+- Git setup script can't find the repository
+
+**Root Cause**: The .git directory is not properly mounted into the dev container.
+
+**Solutions**:
+
+**Step 1: Identify your Git setup**
+Check if you have a submodule or standalone repository:
+```bash
+# On your host machine:
+ls -la .git
+# If .git is a FILE: This is a Git submodule
+# If .git is a DIRECTORY: This is a standalone repository
+```
+
+**Step 2: Configure mounts based on your setup**
+
+**For Standalone Repositories** (most common):
+```json
+"mounts": [
+  "source=${localWorkspaceFolder}/.git,target=/workspace/.git,type=bind,consistency=cached"
+]
+```
+
+**For Git Submodules** (if .git is a file):
+```bash
+# Check what the .git file contains:
+cat .git
+# If it shows: gitdir: ../.git/modules/fullstack-minimal-app
+# Then add both mounts:
+```
+```json
+"mounts": [
+  "source=${localWorkspaceFolder}/.git,target=/workspace/.git,type=bind,consistency=cached",
+  "source=${localWorkspaceFolder}/../.git,target=/workspace/../.git,type=bind,consistency=cached"
+]
+```
+
+**Step 2: Rebuild the container**
+After adding the mount:
+1. Press `Cmd/Ctrl+Shift+P`
+2. Run "Dev Containers: Rebuild Container"
+3. Wait for complete rebuild
+
+**Step 3: Verify the mount worked**
+Inside the container:
+```bash
+ls -la /workspace/.git
+# Should show the .git directory contents
+```
+
+**Step 4: Alternative initialization (if mounting fails)**
+```bash
+# Initialize a new repo and connect to remote
+git init
+git remote add origin <your-repo-url>
+git fetch
+git checkout <branch-name>
+```
+
+---
+
+### 2. Git Authentication and Configuration Issues
+
+**Problem**: Git commands ask for credentials repeatedly, or SSH authentication doesn't work.
+
+**Symptoms**:
+- `git push` or `git pull` asks for credentials every time
+- `fatal: could not read Username for 'https://github.com'`
+- SSH authentication fails with "Permission denied (publickey)"
+- Git commands hang or timeout
+
+**Solutions**:
+
+**For HTTPS Authentication**:
+```bash
+# Configure credential caching (done automatically by setup script)
+git config --global credential.helper 'cache --timeout=3600'
+
+# Configure user if not set
+git config --global user.name "Your Name"
+git config --global user.email "your.email@example.com"
+
+# Use personal access token when prompted (not password)
+```
+
+**For SSH Authentication**:
+```bash
+# Test SSH connection to GitHub
+ssh -T git@github.com
+
+# Check SSH keys are mounted properly
+ls -la ~/.ssh/
+
+# SSH keys should be automatically configured by git-setup.sh
+# If still having issues, check host SSH keys exist:
+# On host: ls -la ~/.ssh/
+```
+
+**Common Git Configuration**:
+```bash
+# Check current Git configuration
+git config --global --list
+
+# The git-setup.sh script automatically configures:
+# - credential.helper for caching
+# - core.editor as VS Code
+# - safe.directory for the workspace
+```
+
+**Why this happens**:
+The dev container needs to inherit Git configuration and SSH keys from your host machine. The devcontainer is configured to mount these automatically, and the git-setup.sh script handles permissions and configuration.
+
+---
+
+### 2. DevContainer Features Not Compatible with Alpine Linux
 
 **Problem**: DevContainer fails to build with error "Linux distro alpine not supported".
 

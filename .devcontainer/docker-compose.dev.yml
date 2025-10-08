@@ -74,7 +74,5 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-    # Run container processes as a non-root user (UID 1000) to match the 'node' user in the image.
-    # Using numeric UID avoids issues when the host user differs. The Dev Container will connect as
-    # the 'node' user (remoteUser) inside the container.
-    user: "1000:1000"
+    # Run container processes as the node user for proper permissions
+    user: "node"
