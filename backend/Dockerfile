@@ -33,6 +33,10 @@ COPY backend/ backend/
 # Set working directory to backend
 WORKDIR /usr/src/app/backend
 
+# Fix permissions for the node user (Student Notes)
+# This ensures the node user can write to node_modules and log files
+RUN chown -R node:node /usr/src/app
+
 EXPOSE 4000
 
 # Start nodemon dev server

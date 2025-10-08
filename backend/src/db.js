@@ -56,7 +56,7 @@ async function testConnection() {
     // Print a short, human-friendly message for students when DB isn't ready
     console.error('❌ Database connection failed:', err && err.message ? err.message : err);
     console.error('   Retrying in 5 seconds... (this will continue until the DB becomes healthy)');
-    setTimeout(testConnection, 5000);
+    global.setTimeout(testConnection, 5000);
   }
 }
 

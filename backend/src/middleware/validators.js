@@ -39,7 +39,7 @@ export const validateProductCreate = [
     .isLength({ min: 2, max: 255 }).withMessage('Name must be 2-255 characters'),
   
   body('description')
-    .optional()
+    .optional({ nullable: true, checkFalsy: true })  // Allow null, undefined, and empty string
     .trim()
     .isLength({ max: 5000 }).withMessage('Description too long (max 5000 characters)'),
   
@@ -49,13 +49,13 @@ export const validateProductCreate = [
     .toFloat(),
   
   body('image_url')
-    .optional()
+    .optional({ nullable: true, checkFalsy: true })  // Allow null, undefined, and empty string
     .trim()
     .isURL().withMessage('Image URL must be a valid URL')
     .isLength({ max: 1024 }).withMessage('URL too long'),
   
   body('category_id')
-    .optional()
+    .optional({ nullable: true, checkFalsy: true })  // Allow null, undefined, and empty string
     .isInt({ min: 1 }).withMessage('Category ID must be a positive integer')
     .toInt(),
   
@@ -93,7 +93,7 @@ export const validatePagination = [
     .toInt(),
   
   query('category_id')
-    .optional()
+    .optional({ nullable: true, checkFalsy: true })  // Allow null, undefined, and empty string
     .isInt({ min: 1 }).withMessage('Category ID must be a positive integer')
     .toInt(),
   

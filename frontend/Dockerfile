@@ -30,13 +30,16 @@ RUN apt-get update \
 	&& rm -rf /var/lib/apt/lists/* \
 	&& npm ci --workspace=frontend --include=dev --silent
 
-
-
 # Copy rest of the frontend app
 COPY frontend/ ./frontend/
 
 # Set working directory to frontend
 WORKDIR /usr/src/app/frontend
+
+# Fix permissions for the node user (Student Notes)
+# This ensures the node user can write to node_modules and create Vite temp files
+# The chown command changes ownership of all files to the node user (UID 1000)
+RUN chown -R node:node /usr/src/app
 
 EXPOSE 5173
 

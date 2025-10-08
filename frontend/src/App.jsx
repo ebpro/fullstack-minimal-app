@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
 import ProductList from './components/ProductList'
 import ProductForm from './components/ProductForm'
@@ -73,59 +73,96 @@ export default function App() {
       }
     }
     check()
-    const id = setInterval(check, 5000)
-    return () => { stopped = true; clearInterval(id) }
+    const id = globalThis.setInterval(check, 5000)
+    return () => { stopped = true; globalThis.clearInterval(id) }
   }, [])
 
   return (
     <BrowserRouter>
       <div className="p-4 max-w-4xl mx-auto">
         {/* Header with status indicator and navigation */}
+        {/* ACCESSIBILITY: Proper landmark roles, ARIA labels, and semantic HTML */}
         <header className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-2xl font-bold">Minimal Product Catalog</h1>
             <div className="mt-1 text-sm text-gray-600 flex items-center gap-3">
               {/* Live backend status indicator (green/yellow/red) */}
-              <div className="flex items-center gap-2">
-                <span className={`inline-block w-2 h-2 rounded-full ${statusColor}`} />
-                <span>{statusText}</span>
+              {/* ACCESSIBILITY: Screen reader friendly status with aria-live */}
+              <div className="flex items-center gap-2" role="status" aria-live="polite">
+                <span 
+                  className={`inline-block w-2 h-2 rounded-full ${statusColor}`}
+                  aria-hidden="true"
+                />
+                <span aria-label={`Backend connection status: ${statusText}`}>
+                  {statusText}
+                </span>
               </div>
               {/* Display the backend URL so students can verify configuration */}
-              <div className="text-xs text-gray-500">Using backend: <code className="px-2 py-1 bg-gray-100 rounded">{String(BACKEND)}</code></div>
+              <div className="text-xs text-gray-500" aria-label="Backend configuration">
+                Using backend: <code className="px-2 py-1 bg-gray-100 rounded">{String(BACKEND)}</code>
+              </div>
             </div>
           </div>
 
           {/* Simple nav links (React Router) */}
-          <nav className="space-x-2">
-            <Link to="/" className="text-blue-600">Home</Link>
-            <Link to="/add" className="text-blue-600">Add product</Link>
+          {/* ACCESSIBILITY: Proper navigation landmark with aria-label */}
+          <nav className="space-x-2" aria-label="Main navigation">
+            <Link 
+              to="/" 
+              className="text-blue-600 hover:text-blue-800 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 rounded px-2 py-1"
+              aria-label="Go to home page (product list)"
+            >
+              Home
+            </Link>
+            <Link 
+              to="/add" 
+              className="text-blue-600 hover:text-blue-800 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 rounded px-2 py-1"
+              aria-label="Add a new product"
+            >
+              Add product
+            </Link>
             {/* EXTENSION_POINT: nav.auth | Add login/logout links | beginner — Add /login route and auth state */}
           </nav>
         </header>
 
         {/* Offline banner with manual retry button (teaching tool) */}
+        {/* ACCESSIBILITY: Alert role for important system status, proper button labeling */}
         {backendAvailable === false && (
-          <div className="mb-4 p-3 rounded bg-red-50 border border-red-200 text-red-800">
-            Backend is currently unavailable. The app may be offline. <button onClick={() => {
-              // quick manual re-check
-              fetch(`${BACKEND}/health`, { cache: 'no-store' })
-                .then(r => { if (r.ok) setBackendAvailable(true) })
-                .catch(() => setBackendAvailable(false))
-            }} className="ml-2 underline">Retry</button>
+          <div 
+            className="mb-4 p-3 rounded bg-red-50 border border-red-200 text-red-800" 
+            role="alert"
+            aria-live="assertive"
+          >
+            Backend is currently unavailable. The app may be offline. 
+            <button 
+              onClick={() => {
+                // quick manual re-check
+                fetch(`${BACKEND}/health`, { cache: 'no-store' })
+                  .then(r => { if (r.ok) setBackendAvailable(true) })
+                  .catch(() => setBackendAvailable(false))
+              }} 
+              className="ml-2 underline hover:no-underline focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 rounded px-1"
+              aria-label="Retry connection to backend server"
+            >
+              Retry
+            </button>
           </div>
         )}
 
         {/* React Router v6 routes */}
         {/* Teaching note: Each <Route> maps a URL path to a React component.
             The colon syntax (:id) creates a route parameter that components
-            can read via useParams(). See ProductDetail.jsx for an example. */}
-        <Routes>
-          <Route path="/" element={<ProductList categories={categories} backend={BACKEND} backendAvailable={backendAvailable} />} />
-          <Route path="/product/:id" element={<ProductDetail backend={BACKEND} backendAvailable={backendAvailable} />} />
-          <Route path="/product/:id/edit" element={<ProductForm categories={categories} backend={BACKEND} backendAvailable={backendAvailable} isEdit={true} />} />
-          <Route path="/add" element={<ProductForm categories={categories} backend={BACKEND} backendAvailable={backendAvailable} />} />
-          {/* EXTENSION_POINT: routes.users | Add user management routes | beginner — Add /users, /users/:id, /users/new */}
-        </Routes>
+            can read via useParams(). See ProductDetail.jsx for an example.
+            ACCESSIBILITY: Main content landmark for screen readers */}
+        <main role="main" aria-label="Main content">
+          <Routes>
+            <Route path="/" element={<ProductList categories={categories} backend={BACKEND} backendAvailable={backendAvailable} />} />
+            <Route path="/product/:id" element={<ProductDetail backend={BACKEND} backendAvailable={backendAvailable} />} />
+            <Route path="/product/:id/edit" element={<ProductForm categories={categories} backend={BACKEND} backendAvailable={backendAvailable} isEdit={true} />} />
+            <Route path="/add" element={<ProductForm categories={categories} backend={BACKEND} backendAvailable={backendAvailable} />} />
+            {/* EXTENSION_POINT: routes.users | Add user management routes | beginner — Add /users, /users/:id, /users/new */}
+          </Routes>
+        </main>
       </div>
     </BrowserRouter>
   )

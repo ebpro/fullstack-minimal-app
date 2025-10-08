@@ -21,7 +21,7 @@ export class AppError extends Error {
 /**
  * Global error handler - must be registered after all routes
  */
-export function errorHandler(err, req, res, next) {
+export function errorHandler(err, req, res, next) { // eslint-disable-line no-unused-vars
   // Log the full error for debugging
   console.error('Error caught by global handler:', {
     message: err.message,

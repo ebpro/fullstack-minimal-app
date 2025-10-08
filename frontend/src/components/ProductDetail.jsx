@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import PropTypes from 'prop-types'
 
@@ -22,7 +22,7 @@ import PropTypes from 'prop-types'
 //   side-by-side image and details on larger screens, stacked on mobile.
 // ---------------------------------------------------------------------------
 
-export default function ProductDetail({ backend, backendAvailable, onUpdate, onDelete }) {
+export default function ProductDetail({ backend, backendAvailable, onUpdate, onDelete }) { // eslint-disable-line no-unused-vars
   const { id } = useParams() // Extract :id from URL (e.g., /product/123)
   const navigate = useNavigate()
   
@@ -60,7 +60,7 @@ export default function ProductDetail({ backend, backendAvailable, onUpdate, onD
   // If user confirms, we send HTTP DELETE and navigate back to home on success.
   // Optional chaining (onDelete?.()) safely calls the callback if provided.
   const handleDelete = async () => {
-    if (!confirm('Delete this product?')) return // User cancelled
+    if (!globalThis.confirm('Delete this product?')) return // User cancelled
     
     try {
       const res = await fetch(`${backend}/api/products/${id}`, { method: 'DELETE' })
@@ -70,8 +70,8 @@ export default function ProductDetail({ backend, backendAvailable, onUpdate, onD
       } else {
         throw new Error('Delete failed')
       }
-    } catch (err) {
-      alert('Failed to delete product. Please try again.')
+    } catch {
+      globalThis.alert('Failed to delete product. Please try again.')
     }
   }
 
@@ -101,54 +101,90 @@ export default function ProductDetail({ backend, backendAvailable, onUpdate, onD
   // Teaching note: This layout uses Tailwind's responsive prefixes:
   // - Default (mobile): stacked vertically
   // - md: (tablet+): side-by-side with md:flex, image gets fixed width md:w-96
+  // ACCESSIBILITY: Added proper headings, alt text, ARIA labels, and semantic HTML
   return (
-    <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
+    <article className="max-w-4xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden" role="main" aria-labelledby="product-title">
       {/* Responsive flex container: stacked on mobile, side-by-side on tablet+ */}
       <div className="md:flex">
         {/* Product image with fallback placeholder */}
         {/* Teaching note: md:flex-shrink-0 prevents image from shrinking.
-            md:h-full makes image fill container height on larger screens. */}
+            md:h-full makes image fill container height on larger screens.
+            ACCESSIBILITY: Proper alt text describes the image content */}
         <div className="md:flex-shrink-0">
-          <img src={product.image_url || 'https://placehold.co/600x400?text=No+Image'} alt="" className="w-full h-64 md:h-full md:w-96 object-cover" />
+          <img 
+            src={product.image_url || 'https://placehold.co/600x400?text=No+Image'} 
+            alt={product.image_url ? `${product.name} product image` : 'No image available'} 
+            className="w-full h-64 md:h-full md:w-96 object-cover" 
+          />
         </div>
         
         {/* Product details section */}
         <div className="p-6 flex-1">
           {/* Header: product name and price */}
-          <div className="flex items-start justify-between">
+          <header className="flex items-start justify-between">
             <div>
-              <h2 className="text-2xl font-semibold text-gray-900">{product.name}</h2>
-              <div className="text-sm text-gray-500 mt-1">{product.category_name || 'Uncategorized'}</div>
+              <h1 id="product-title" className="text-2xl font-semibold text-gray-900">{product.name}</h1>
+              <div className="text-sm text-gray-500 mt-1" aria-label="Product category">
+                {product.category_name || 'Uncategorized'}
+              </div>
             </div>
-            <div className="text-2xl font-bold text-emerald-600">${Number(product.price).toFixed(2)}</div>
-          </div>
+            <div 
+              className="text-2xl font-bold text-emerald-600" 
+              aria-label={`Price: ${Number(product.price).toFixed(2)} dollars`}
+            >
+              ${Number(product.price).toFixed(2)}
+            </div>
+          </header>
 
           {/* Product description */}
-          <p className="mt-4 text-gray-700">{product.description}</p>
+          {product.description && (
+            <section aria-labelledby="description-heading">
+              <h2 id="description-heading" className="sr-only">Product Description</h2>
+              <p className="mt-4 text-gray-700">{product.description}</p>
+            </section>
+          )}
 
           {/* Action buttons: Edit, Delete, Back */}
           {/* Teaching note: navigate(-1) uses browser history to go back.
-              flex-wrap ensures buttons wrap on small screens. */}
-          <div className="mt-6 flex flex-wrap gap-3">
-            <button className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md shadow" onClick={() => navigate(`/product/${id}/edit`)}>
-              Edit
-            </button>
-            <button className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-md shadow" onClick={handleDelete}>
-              Delete
-            </button>
-            <button className="inline-flex items-center gap-2 px-4 py-2 border rounded-md text-gray-700" onClick={() => navigate(-1)}>
-              Back
-            </button>
-          </div>
+              flex-wrap ensures buttons wrap on small screens.
+              ACCESSIBILITY: Proper button labels, focus management, and keyboard support */}
+          <nav className="mt-6" aria-label="Product actions">
+            <div className="flex flex-wrap gap-3">
+              <button 
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50" 
+                onClick={() => navigate(`/product/${id}/edit`)}
+                aria-label={`Edit ${product.name}`}
+              >
+                Edit
+              </button>
+              <button 
+                className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-md shadow hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50" 
+                onClick={handleDelete}
+                aria-label={`Delete ${product.name}`}
+              >
+                Delete
+              </button>
+              <button 
+                className="inline-flex items-center gap-2 px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50" 
+                onClick={() => navigate(-1)}
+                aria-label="Go back to previous page"
+              >
+                Back
+              </button>
+            </div>
+          </nav>
 
           {/* Metadata: creation timestamp */}
           {/* Teaching note: toLocaleString() formats dates according to user's locale.
-              The backend sends ISO 8601 timestamps (e.g., "2025-10-01T10:30:00.000Z"). */}
-          <div className="mt-4 text-sm text-gray-400">Created: {new Date(product.created_at).toLocaleString()}</div>
+              The backend sends ISO 8601 timestamps (e.g., "2025-10-01T10:30:00.000Z").
+              ACCESSIBILITY: Semantic time element with machine-readable datetime */}
+          <footer className="mt-4 text-sm text-gray-400" aria-label="Product metadata">
+            Created: <time dateTime={product.created_at}>{new Date(product.created_at).toLocaleString()}</time>
+          </footer>
           {/* EXTENSION_POINT: detail.reviews | Add product reviews section | intermediate — Add reviews table and form */}
         </div>
       </div>
-    </div>
+    </article>
   )
 }
 

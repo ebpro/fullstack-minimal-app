@@ -161,10 +161,11 @@
     }
   },
 
-  "postCreateCommand": "chmod +x /workspace/.devcontainer/post-create-setup.sh && /workspace/.devcontainer/post-create-setup.sh",
+  "postCreateCommand": "chmod +x /workspace/.devcontainer/post-create-setup.sh && /workspace/.devcontainer/post-create-setup.sh || true; bash -lc 'echo \"✅ Setup complete — interactive shell started. Run: npm run dev\"; exec /bin/zsh -l'",
 
   // Post-start command: runs every time the container starts
-  "postStartCommand": "echo '🚀 Ready! Run: npm run dev'",
+  // Keep the terminal open by replacing the ephemeral command with an interactive shell.
+  "postStartCommand": "bash -lc 'echo \"🚀 Ready! Run: npm run dev\"; exec /bin/zsh -l'",
 
   // Remote user: run VS Code server as this user inside the container
   // Using 'node' user (non-root) for better security
