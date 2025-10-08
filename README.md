@@ -2,10 +2,7 @@
 
 > **A production-ready, pedagogical starting point for teaching modern full-stack web development to L3 students.**
 
-[![Node.js](https://img.shields.io/badge/Node.js-22-green)](https://nodejs.org/)
-[![React](https://img.shields.io/badge/React-19-blue)](https://react.dev/)
-[![MySQL](https://img.shields.io/badge/MySQL-8.0-orange)](https://www.mysql.com/)
-[![Docker](https://img.shields.io/badge/Docker-Ready-blue)](https://www.docker.com/)
+[![Node.js](https://img.shields.io/badge/Node.js-22-green)](https://nodejs.org/) [![React](https://img.shields.io/badge/React-19-blue)](https://react.dev/) [![MySQL](https://img.shields.io/badge/MySQL-8.0-orange)](https://www.mysql.com/) [![Docker](https://img.shields.io/badge/Docker-Ready-blue)](https://www.docker.com/)
 
 ---
 
@@ -44,15 +41,73 @@ Database (MySQL 8.0)
 - 🏥 Health monitoring
 - 🐳 Docker-first development
 
-See [TEACHING_NOTES.md](./TEACHING_NOTES.md) for detailed learning objectives.
+See [LEARNING_NOTES.md](./LEARNING_NOTES.md) for detailed learning objectives.
 
 ---
 
 ## 🚀 Quick Start
 
-### For students (super quick)
+### Prerequisites
 
-From the repository root:
+- If possible install Docker Desktop (docker.com) for easiest setup
+- Alternatively, install Node.js 22+ (nodejs.org) and MySQL 8.0+ locally. Create a MySQL database and user as per `db/init.sql` (in code see below).
+
+### Get the Code
+
+Get the source code locally:
+
+- Clone the Git repository using the VS Code UI (Recommended):
+  - View > Command Palette… → type and select “Git: Clone” (or on the Welcome page click “Clone Git Repository…”)
+  - Paste: `git@github.com:ebpro/fullstack-minimal-app.git`
+  - Choose a destination folder, then click “Open” when prompted
+  - Tip: If you don’t have SSH keys set up, choose the HTTPS option in the dialog
+
+- Or download ZIP and extract:
+  - https://github.com/ebpro/fullstack-minimal-app/archive/refs/heads/develop.zip
+  - `cd fullstack-minimal-app-develop/`
+
+### To test the app quickly (No setup)
+
+Run the following command in the application directory to start the app:
+
+   ```bash
+   docker compose up --build
+   ```
+
+### For modern daily development (Recommended)
+
+**First Time Setup**:
+
+1. Open project in VS Code
+   - File > Open Folder... → select minimal-app directory
+2. Reopen in container
+   - Click "Reopen in Container" notification
+   - OR: Cmd/Ctrl+Shift+P → "Dev Containers: Reopen in Container"
+3. Wait for build (first time: 2-5 minutes)
+4. Open terminal in VS Code (Ctrl+`) and run:
+
+```bash
+# From project root (inside container)
+npm install  # Install dependencies (if not auto-installed)
+npm run dev  # Start both frontend and backend
+```
+
+5. Open browser (if not auto-opened)
+   Frontend: http://localhost:5173
+   Backend API: http://localhost:4000
+
+**Daily Workflow**:
+
+```bash
+# Open VS Code → it reopens in container automatically
+# Terminal already connected to container
+npm run dev  # Start development servers
+# Code, save, see changes instantly (hot reload)
+```
+
+### For local manual setup (without Docker and Dev Container)
+
+WARNING: This is not the recommended way to run the app. Use Docker and Dev Containers if possible. If you must run locally, ensure you have preceeding prerequisites (node, mysql and database created) installed and configured.
 
 ```bash
 # Install dependencies for both workspaces (backend + frontend)
@@ -63,113 +118,15 @@ npm run dev
 
 # Backend health: http://localhost:4000/health
 # Frontend (Vite): http://localhost:5173/
-```
-
-To run a single workspace instead of both at once:
-
-```bash
-npm run dev:backend   # backend only
-npm run dev:frontend  # frontend only
+# Scraper service: http://localhost:5000/health
 ```
 
 Note: copying `.env.example` into `.env` is optional — the compose file and app code include sensible defaults for typical local development.
 
-## 🚀 Student Quick Start
-
-**First Time Setup** (5-10 minutes):
-```bash
-# 1. Install prerequisites
-# - Docker Desktop (docker.com)
-# - VS Code (code.visualstudio.com)
-# - Dev Containers extension (in VS Code)
-
-# 2. Open project in VS Code
-# File > Open Folder... → select minimal-app directory
-
-# 3. Reopen in container
-# Click "Reopen in Container" notification
-# OR: Cmd/Ctrl+Shift+P → "Dev Containers: Reopen in Container"
-
-# 4. Wait for build (first time: 2-5 minutes)
-
-# 5. Open terminal in VS Code (Ctrl+`) and run:
-npm install  # Install dependencies (if not auto-installed)
-npm run dev  # Start both frontend and backend
-
-# 6. Open browser
-# Frontend: http://localhost:5173
-# Backend API: http://localhost:4000
-```
-
-**Daily Workflow**:
-```bash
-# Open VS Code → it reopens in container automatically
-# Terminal already connected to container
-npm run dev  # Start development servers
-# Code, save, see changes instantly (hot reload)
-```
-
-### Option 1: Docker Compose (Recommended for beginners)
-
-You need to install Docker and run:
-
-```bash
-cd minimal-app
-docker compose up --build
-```
-
-- **Frontend:** http://localhost:5173 (development)
-- **Backend:** http://localhost:4000
-- **Health Check:** http://localhost:4000/health
-
-### Option 2: Manual Setup (For development)
-
-#### 1. Start MySQL
-
-You can run MySQL manually or via Docker:
-
-```bash
-docker compose up -d mysql
-```
-
-If you run MySQL manually, ensure you create the database and user as per `db/init.sql`.
-
-#### 2. Start Backend
-
-```bash
-cd backend
-# Optional: copy example to .env to override defaults locally
-cp .env.example .env
-npm install
-npm run dev
-```
-
-Backend will run on http://localhost:4000
-
-You can test the health endpoint:
-
-```bash
-curl http://localhost:4000/health
-```
-
-#### 3. Start Frontend
-
-```bash
-cd frontend
-# Optional: copy example to .env to override defaults locally
-cp .env.example .env
-npm install
-npm run dev
-```
-
-Frontend will run on http://localhost:5173
-
----
-
 ## 📂 Project Structure
 
 ```bash
-minimal-app/
+fullstack-minimal-app/
 ├── backend/
 │   ├── src/
 │   │   ├── index.js              # Main server (middleware, routes)
@@ -180,21 +137,14 @@ minimal-app/
 │   │   │   └── staticServing.js  # Optional frontend serving
 │   │   └── routes/
 │   │       ├── products.js       # Product CRUD endpoints
-│   │       ├── categories.js     # Category endpoints
-│   │       └── reviews.js        # Review endpoints (Practice 4)
+│   │       └── categories.js     # Category endpoints
 │   ├── test/
 │   │   └── smoke.js              # Smoke tests with assertions
 │   ├── package.json
 │   ├── .env.example
+│   ├── eslint.config.js
 │   └── Dockerfile
 ├── frontend/
-│   ├── public/
-│   │   └── prototypes/           # Static HTML prototypes (Practice 1 & 2)
-│   │       ├── index.html        # Product listing prototype
-│   │       ├── product-detail.html # Product detail prototype
-│   │       ├── product-filter.html # Interactive filter (Practice 2)
-│   │       ├── product-filter.js   # JavaScript logic (Practice 2)
-│   │       └── products-data.json  # Mock data (Practice 2)
 │   ├── src/
 │   │   ├── App.jsx               # Main component (routing, health check)
 │   │   ├── main.jsx              # React entry point
@@ -202,30 +152,36 @@ minimal-app/
 │   │   └── components/
 │   │       ├── ProductList.jsx   # Product listing with pagination
 │   │       ├── ProductDetail.jsx # Single product view
-│   │       ├── ProductForm.jsx   # Create/edit form
-│   │       └── reviews/          # Review components (Practice 3)
-│   │           ├── ReviewCard.jsx
-│   │           ├── ReviewList.jsx
-│   │           ├── ReviewStats.jsx
-│   │           └── ProductReviewsPage.jsx
+│   │       └── ProductForm.jsx   # Create/edit form
+│   ├── index.html                # Vite entry point
 │   ├── package.json
 │   ├── .env.example
+│   ├── eslint.config.js
+│   ├── postcss.config.cjs
+│   ├── tailwind.config.cjs
+│   ├── vite.config.js
+│   └── Dockerfile
+├── scraper-service/
+│   ├── src/
+│   │   ├── index.js              # Mock review scraper service
+│   │   └── mockReviews.js        # Mock review data generator
+│   ├── package.json
 │   └── Dockerfile
 ├── db/
-│   ├── init.sql                  # Database schema + seed data
-│   ├── schema.sql                # Reviews table schema (Practice 5)
-│   └── seed.sql                  # Sample reviews (Practice 5)
+│   └── init.sql                  # Database schema + seed data
 ├── docker-compose.yml            # Orchestration with health checks
+├── package.json                  # Root workspace configuration
 ├── README.md                     # This file
-└── TEACHING_NOTES.md             # Instructor guide
+└── LEARNING_NOTES.md             # Student learning guide
 ```
 
 **Structure Purpose:**
 
-- **`frontend/public/prototypes/`** - Static HTML/CSS/JS for Practices 1-2 (foundation)
-- **`frontend/src/`** - React application for Practice 3+ (modern framework)
-- **`backend/src/routes/`** - REST API endpoints organized by resource
-- **`db/`** - Database schemas and migrations
+- **`frontend/src/`** - React application with components and styling
+- **`backend/src/`** - Express REST API with routes, middleware, and database connection
+- **`scraper-service/src/`** - Mock microservice for external data demonstration
+- **`db/`** - Database schema and initialization
+- **Root `package.json`** - npm workspace configuration for managing all services
 
 ---
 
@@ -233,25 +189,25 @@ minimal-app/
 
 ### Products
 
-| Method  | Endpoint                 | Description                         | Query Params                     |
-|--------:|:------------------------:|:-----------------------------------:|:--------------------------------:|
-| GET     | `/api/products`          | List products (paginated)           | `page`, `per_page`, `category_id` |
-| GET     | `/api/products/:id`      | Get single product                  | -                                |
-| POST    | `/api/products`          | Create product                      | -                                |
-| PUT     | `/api/products/:id`      | Update product                      | -                                |
-| DELETE  | `/api/products/:id`      | Delete product                      | -                                |
+| Method |      Endpoint       |        Description        |           Query Params            |
+| -----: | :-----------------: | :-----------------------: | :-------------------------------: |
+|    GET |   `/api/products`   | List products (paginated) | `page`, `per_page`, `category_id` |
+|    GET | `/api/products/:id` |    Get single product     |                 -                 |
+|   POST |   `/api/products`   |      Create product       |                 -                 |
+|    PUT | `/api/products/:id` |      Update product       |                 -                 |
+| DELETE | `/api/products/:id` |      Delete product       |                 -                 |
 
 ### Categories
 
-| Method | Endpoint         | Description         |
-|:------:|:----------------:|:-------------------:|
-| GET    | `/api/categories`| List all categories |
+| Method |     Endpoint      |     Description     |
+| :----: | :---------------: | :-----------------: |
+|  GET   | `/api/categories` | List all categories |
 
 ### System
 
-| Method | Endpoint | Description                         |
-|:------:|:--------:|:-----------------------------------:|
-| GET    | `/health`| Health check (includes DB status)   |
+| Method | Endpoint  |            Description            |
+| :----: | :-------: | :-------------------------------: |
+|  GET   | `/health` | Health check (includes DB status) |
 
 **Example Request:**
 
@@ -286,28 +242,9 @@ curl http://localhost:4000/api/products?page=1&per_page=10
 
 ---
 
-## 🧪 Testing
-
-### Backend Smoke Tests
-
-```bash
-cd backend
-npm test
-```
-
-Tests include:
-
-- ✅ Health endpoint
-- ✅ Product listing
-- ✅ Category listing
-- ✅ 404 handling
-- ✅ Invalid ID handling
-
----
-
 ## 🛠️ Development Commands
 
-### Backend
+- To run commands, open a terminal in VS Code (Ctrl+`) inside the Dev Container.
 
 ```bash
 npm run dev    # Start with nodemon (auto-reload)
@@ -316,74 +253,25 @@ npm test       # Run smoke tests
 npm run lint   # Run ESLint
 ```
 
-### Frontend
+### Test APIs quickly (REST Client)
+
+- Open the file `api-tests.http` at the repo root.
+- Install the "REST Client" VS Code extension (if not already present).
+- Click "Send Request" above any request to exercise the Backend and Scraper endpoints.
+- Tip: Adjust `@backendUrl` and `@scraperUrl` variables at the top if you changed ports.
+
+- ADVANCED STUDENTS ONLY : To manage dependencies (run from project root):
 
 ```bash
-npm run dev      # Start Vite dev server
-npm run build    # Build for production
-npm run preview  # Preview production build
-npm run lint     # Run ESLint
+npm install  # Install dependencies
+npm ci       # Clean install (fresh node_modules)
+npm outdated # Check for outdated packages
+npm update   # Update packages (use cautiously)
 ```
-
----
-
-## � Dev Container Configuration
-
-This project includes a VS Code Dev Container setup to give students a reproducible development environment. The configuration lives in the `.devcontainer/` directory and supports two modes:
-
-- Compose mode (`devcontainer.json`): orchestrates `mysql`, `backend`, and `frontend` via Docker Compose. Best for full-stack exercises.
-- Standalone mode (`devcontainer-standalone.json`): single Node.js container for lightweight development (manage MySQL separately).
-
-### Quick Dev Container Start
-
-Prerequisites:
-
-- Docker Desktop
-- VS Code with the "Dev Containers" extension
-
-Steps:
-
-1. Open the `minimal-app` folder in VS Code.
-2. When prompted, click "Reopen in Container" (or run: Command Palette → "Dev Containers: Reopen in Container").
-3. Wait for the container to build (first time may take a few minutes).
-4. Open the integrated terminal and, if needed, run `npm install`.
-5. Start the servers manually from the integrated terminal (recommended for teaching):
-
-```bash
-# Start backend (inside container)
-cd backend
-npm run dev
-
-# In a separate terminal inside the container: start frontend
-cd frontend
-npm run dev
-```
-
-Frontend: http://localhost:5173
-
-Backend API: http://localhost:4000
-
-### Key Dev Container Notes
-
-- The Dev Container runs a non-root `node` user for safety. If you see permission errors, fix ownership inside the container:
-
-```bash
-sudo chown -R node:node /usr/src/app
-```
-
-- The `.devcontainer/docker-compose.dev.yml` file provides a Debian-based environment (Node 22 on bullseye) compatible with Dev Container features. The project's main `docker-compose.yml` uses Alpine images for smaller production images; Dev Container features require Debian/Ubuntu in some cases.
-
-- The Dev Container installs recommended VS Code extensions such as ESLint, Prettier, SQLTools (MySQL driver), Docker, GitLens, Path Intellisense, Auto Rename Tag, Tailwind IntelliSense, and REST Client.
 
 ---
 
 ## 🛠️ Common Dev Container Tasks & Troubleshooting
-
-### Dev Container build fails with "Linux distro alpine not supported"
-
-Cause: The Dev Container Node feature does not support Alpine base images.
-
-Fix: Use `.devcontainer/docker-compose.dev.yml` which uses Debian-based Node images (for example `node:22-bullseye`) and ensure `devcontainer.json` references it.
 
 ### Browser opens but frontend shows no content
 
@@ -391,16 +279,7 @@ Cause: When running Vite inside a container, it must bind to `0.0.0.0` (not `loc
 
 Fixes:
 
-- Ensure `frontend/vite.config.js` contains:
-
-```javascript
-server: {
-  port: 5173,
-  host: '0.0.0.0', // Bind to all interfaces for Docker
-  watch: { usePolling: true }
-}
-```
-
+- Check `frontend/.env` has `VITE_HOST=0.0.0.0`
 - Start the frontend manually inside the container:
 
 ```bash
@@ -408,38 +287,33 @@ cd frontend
 npm run dev -- --host 0.0.0.0
 ```
 
-### Permission errors (EACCES)
-
-If `npm install` fails with EACCES errors, the mounted workspace may be owned by root while the container runs as `node`. Fix ownership:
-
-```bash
-sudo chown -R node:node /usr/src/app
-npm install
-```
-
 ### Ports already in use
 
 If ports 5173, 4000, or 3306 are in use on your host, stop the conflicting services or change port mappings in `docker-compose.yml`.
 
-### MySQL health / connection issues
+Cause: Another app is using the same port.
 
-- Wait for the MySQL healthcheck to report healthy with `docker compose ps`.
-- Check logs: `docker compose logs mysql`.
+Fixes:
 
----
-
-## 📚 Useful Commands (Dev Container / Docker)
-
-```bash
-docker compose -f .devcontainer/docker-compose.dev.yml up -d
-docker compose -f .devcontainer/docker-compose.dev.yml down
-docker compose ps
-docker compose logs -f
-```
+- Stop the other app (e.g., Remove Docker containers from docker desktop UI, stop local MySQL server).
 
 ---
 
-## 📖 Additional Resources
+## Docker Container
+
+This project uses Docker for easy setup and consistent environments. The easiest way to manage docker is via the Docker Desktop application.
+
+## 🔌 SQLTools (VS Code)
+
+- Dev Containers: SQLTools and the MySQL driver are already installed and preconfigured. Open SQLTools in VS Code and connect using the provided MySQL profile. No manual setup needed.
+- Local VS Code (outside the container): if you prefer a local connection, add a profile with these defaults and be sure containers are running:
+  - Host: 127.0.0.1, Port: 3306
+  - Database: minimal_app_db
+  - User/Password: appuser / apppassword
+
+Note: These values come from docker-compose. If you changed MYSQL_DATABASE/USER/PASSWORD, use your custom values. Avoid exposing DB ports in production.
+
+## Additional Resources
 
 - Dev Containers docs: https://code.visualstudio.com/docs/devcontainers/containers
 - Express best practices: https://expressjs.com/en/advanced/best-practice-performance.html
@@ -449,21 +323,21 @@ docker compose logs -f
 
 ## 🤝 Contributing
 
-This is a teaching project. Contributions that improve pedagogy are welcome. Please keep changes small, comment "why" as well as "what", and update `TEACHING_NOTES.md` for new exercises.
+This is a teaching project. Contributions that improve pedagogy are welcome. Please keep changes small, comment "why" as well as "what", and update `LEARNING_NOTES.md` for new exercises.
 
 ---
 
 ## 📚 Tech Stack
 
-| Layer    | Technology       | Version |
-|:--------:|:----------------:|:-------:|
-| Frontend | React            | 19.1    |
-| Frontend | Vite             | 7.1     |
-| Frontend | Tailwind CSS     | 3.4     |
-| Frontend | React Router     | 7.9     |
-| Backend  | Node.js          | 22      |
-| Backend  | Express          | 4.18    |
-| Database | MySQL            | 8.0     |
+|  Layer   |  Technology  | Version |
+| :------: | :----------: | :-----: |
+| Frontend |    React     |  19.1   |
+| Frontend |     Vite     |   7.1   |
+| Frontend | Tailwind CSS |   3.4   |
+| Frontend | React Router |   7.9   |
+| Backend  |   Node.js    |   22    |
+| Backend  |   Express    |  4.18   |
+| Database |    MySQL     |   8.0   |
 
 ---
 
@@ -475,6 +349,5 @@ MIT License - Free for educational use
 
 ## 🙋 Support
 
-**For Students:** Read [TEACHING_NOTES.md](./TEACHING_NOTES.md) first.
-**For Instructors:** See teaching strategies and common issues in `TEACHING_NOTES.md`.
+**For Students:** Read [LEARNING_NOTES.md](./LEARNING_NOTES.md) first.
 **Issues:** Open an issue for bugs or pedagogical improvements.

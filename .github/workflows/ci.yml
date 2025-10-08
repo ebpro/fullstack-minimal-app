@@ -38,13 +38,13 @@ on:
       - develop
       - feature/hanoi2025
       - main
-  
+
   # Run on pull requests targeting these branches
   pull_request:
     branches:
       - develop
       - main
-  
+
   # Allow manual trigger from Actions tab
   workflow_dispatch:
 
@@ -56,7 +56,7 @@ concurrency:
 
 # Environment variables available to all jobs
 env:
-  NODE_VERSION: '22.x'
+  NODE_VERSION: "22.x"
   DB_HOST: localhost
   DB_PORT: 3306
   DB_USER: testuser
@@ -70,24 +70,24 @@ jobs:
   lint-backend:
     name: Lint Backend (ESLint)
     runs-on: ubuntu-latest
-    
+
     steps:
       # Checkout code from repository
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       # Setup Node.js with caching for faster installs
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-      
+          cache: "npm"
+
       # Install dependencies
       # Teaching note: npm ci is preferred in CI (clean install from lockfile)
       - name: Install dependencies
         run: npm ci
-      
+
       # Run ESLint on backend code
       - name: Run ESLint
         run: npm run lint --workspace=backend
@@ -98,20 +98,20 @@ jobs:
   lint-frontend:
     name: Lint Frontend (ESLint)
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-      
+          cache: "npm"
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Run ESLint
         run: npm run lint --workspace=frontend
 
@@ -121,20 +121,20 @@ jobs:
   build-frontend:
     name: Build Frontend (Vite)
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-      
+          cache: "npm"
+
       - name: Install dependencies
         run: npm ci
-      
+
       # Build frontend with Vite
       # Teaching note: This catches build errors (TypeScript, import issues, etc.)
       - name: Build frontend
@@ -142,7 +142,7 @@ jobs:
         env:
           # Provide backend URL for build (embedded in frontend bundle)
           VITE_BACKEND_URL: http://localhost:4000
-      
+
       # Upload build artifacts so we can inspect them if needed
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -157,7 +157,7 @@ jobs:
   test-backend:
     name: Test Backend (Smoke Tests)
     runs-on: ubuntu-latest
-    
+
     # Start MySQL as a service container
     # Teaching note: GitHub Actions can run services alongside your job
     services:
@@ -176,27 +176,33 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-      
+          cache: "npm"
+
+      # Install MySQL client for initializing the test database
+      - name: Install MySQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mysql-client
+
       - name: Install dependencies
         run: npm ci
-      
+
       # Initialize database with schema and sample data
       - name: Initialize database
         run: |
           mysql -h 127.0.0.1 -u testuser -ptestpassword test_db < db/init.sql
         env:
           MYSQL_PWD: testpassword
-      
+
       # Wait for backend to start, then run smoke tests
       # Teaching note: Smoke tests verify basic API functionality
       - name: Start backend and run smoke tests
@@ -204,7 +210,7 @@ jobs:
           # Start backend in background
           npm run start --workspace=backend &
           BACKEND_PID=$!
-          
+
           # Wait for backend to be ready (max 30 seconds)
           echo "Waiting for backend to start..."
           for i in {1..30}; do
@@ -215,14 +221,14 @@ jobs:
             echo "Waiting... ($i/30)"
             sleep 1
           done
-          
+
           # Run smoke tests
           npm test --workspace=backend
           TEST_EXIT_CODE=$?
-          
+
           # Stop backend
           kill $BACKEND_PID || true
-          
+
           # Exit with test result
           exit $TEST_EXIT_CODE
         env:
@@ -239,15 +245,15 @@ jobs:
   docker-build-backend:
     name: Build Backend Docker Image
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       # Setup Docker Buildx for better build performance
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      
+
       # Build backend Docker image (but don't push)
       # Teaching note: This verifies Dockerfile syntax and build process
       - name: Build backend image
@@ -266,14 +272,14 @@ jobs:
   docker-build-frontend:
     name: Build Frontend Docker Image
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      
+
       - name: Build frontend image
         uses: docker/build-push-action@v5
         with:
@@ -292,37 +298,37 @@ jobs:
     runs-on: ubuntu-latest
     # This job only runs if all previous jobs succeed
     needs: [lint-backend, lint-frontend, build-frontend, test-backend]
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       # Build and start all services with docker-compose
       - name: Build and start services
         run: |
           docker compose up --build -d
           echo "Waiting for services to be healthy..."
           sleep 30
-      
+
       # Check service health
       - name: Check service health
         run: |
           # Check backend health endpoint
           curl -f http://localhost:4000/health || exit 1
-          
+
           # Check frontend is serving content
           curl -f http://localhost:5173 || exit 1
-          
+
           # Check MySQL is accessible (via backend)
           curl -f http://localhost:4000/api/categories || exit 1
-          
+
           echo "✅ All services are healthy!"
-      
+
       # Show logs if tests fail
       - name: Show logs on failure
         if: failure()
         run: docker compose logs
-      
+
       # Cleanup
       - name: Stop services
         if: always()
@@ -335,9 +341,18 @@ jobs:
     name: CI Summary
     runs-on: ubuntu-latest
     # Run after all other jobs complete
-    needs: [lint-backend, lint-frontend, build-frontend, test-backend, docker-build-backend, docker-build-frontend, docker-compose-test]
+    needs:
+      [
+        lint-backend,
+        lint-frontend,
+        build-frontend,
+        test-backend,
+        docker-build-backend,
+        docker-build-frontend,
+        docker-compose-test,
+      ]
     if: always()
-    
+
     steps:
       - name: Check results
         run: |
@@ -352,7 +367,7 @@ jobs:
           echo "Docker Build Frontend: ${{ needs.docker-build-frontend.result }}"
           echo "Docker Compose Test: ${{ needs.docker-compose-test.result }}"
           echo "==================================="
-          
+
           # Fail if any job failed
           if [[ "${{ needs.lint-backend.result }}" == "failure" ]] || \
              [[ "${{ needs.lint-frontend.result }}" == "failure" ]] || \
@@ -364,7 +379,7 @@ jobs:
             echo "❌ CI failed - see logs above"
             exit 1
           fi
-          
+
           echo "✅ All CI checks passed!"
 
 # ==============================================================================

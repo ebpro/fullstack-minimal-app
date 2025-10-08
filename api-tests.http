@@ -1,0 +1,209 @@
+###############################################################################
+# REST Client Examples for Minimal App (Backend + Scraper)
+###############################################################################
+# Purpose:
+# - Test API endpoints directly from VS Code using the REST Client extension
+# - No need for Postman or curl
+# - Great for learning HTTP methods and API design
+#
+# How to use:
+# 1) Install "REST Client" extension by Huachao Mao
+# 2) Click "Send Request" above any ### line
+# 3) View the response in a new tab
+#
+# Variables: change these if your ports differ
+@backendUrl = http://localhost:4000
+@scraperUrl = http://localhost:5000
+@contentType = application/json
+
+###############################################################################
+# Health Checks
+###############################################################################
+
+### Backend health
+# Expected: 200 OK with { "status": "ok", "db": "connected", "products": <number>, "timestamp": "..." }
+GET {{backendUrl}}/health
+
+### Scraper health
+# Expected: 200 OK with { "status": "healthy", "service": "review-scraper", ... }
+GET {{scraperUrl}}/health
+
+###############################################################################
+# Backend: Categories
+###############################################################################
+
+### Get all categories
+# Expected: 200 OK with array of category objects
+GET {{backendUrl}}/api/categories
+
+###############################################################################
+# Backend: Products (List & Filter)
+###############################################################################
+
+### Get all products (first page)
+# Expected: 200 OK with { data: [...], meta: { total, page, per_page, total_pages } }
+GET {{backendUrl}}/api/products
+
+### Get products - page 2
+GET {{backendUrl}}/api/products?page=2&per_page=5
+
+### Get products filtered by category
+# Replace category_id=1 with an ID from /api/categories
+GET {{backendUrl}}/api/products?category_id=1
+
+### Get products - multiple filters
+GET {{backendUrl}}/api/products?page=1&per_page=3&category_id=2
+
+###############################################################################
+# Backend: Products (Single)
+###############################################################################
+
+### Get product by ID
+GET {{backendUrl}}/api/products/1
+
+### Get product by ID - Not Found
+# Expected: 404 Not Found
+GET {{backendUrl}}/api/products/999999
+
+### Get product by ID - Invalid ID
+# Expected: 400 Bad Request or 404 Not Found
+GET {{backendUrl}}/api/products/invalid
+
+###############################################################################
+# Backend: Products (Create)
+###############################################################################
+
+### Create product - Full data
+# Expected: 201 Created with product object
+POST {{backendUrl}}/api/products
+Content-Type: {{contentType}}
+
+{
+  "name": "Test Product from REST Client",
+  "price": 29.99,
+  "description": "Created via VS Code REST Client for testing",
+  "category_id": 1,
+  "image_url": "https://placehold.co/600x400?text=Test+Product"
+}
+
+### Create product - Minimal data (no category, no image)
+POST {{backendUrl}}/api/products
+Content-Type: {{contentType}}
+
+{
+  "name": "Minimal Product",
+  "price": 9.99,
+  "description": "Just name, price, and description"
+}
+
+### Create product - Validation error (missing required fields)
+# Expected: 400 Bad Request with validation errors
+POST {{backendUrl}}/api/products
+Content-Type: {{contentType}}
+
+{
+  "name": "Incomplete Product"
+}
+
+### Create product - Validation error (invalid price)
+# Expected: 400 Bad Request (price must be positive)
+POST {{backendUrl}}/api/products
+Content-Type: {{contentType}}
+
+{
+  "name": "Invalid Price Product",
+  "price": -10.00,
+  "description": "Price is negative"
+}
+
+###############################################################################
+# Backend: Products (Update)
+###############################################################################
+
+### Update product - Full update
+# Teaching note: PUT replaces the entire resource
+PUT {{backendUrl}}/api/products/1
+Content-Type: {{contentType}}
+
+{
+  "name": "Updated Product Name",
+  "price": 39.99,
+  "description": "This product was updated via REST Client",
+  "category_id": 2,
+  "image_url": "https://placehold.co/600x400?text=Updated"
+}
+
+### Update product - Partial-ish (send required fields only)
+PUT {{backendUrl}}/api/products/2
+Content-Type: {{contentType}}
+
+{
+  "name": "Existing Product Name",
+  "price": 99.99,
+  "description": "Only the price changed"
+}
+
+### Update product - Not Found
+# Expected: 404 Not Found
+PUT {{backendUrl}}/api/products/999999
+Content-Type: {{contentType}}
+
+{
+  "name": "Non-existent Product",
+  "price": 19.99,
+  "description": "This ID doesn't exist"
+}
+
+###############################################################################
+# Backend: Products (Delete)
+###############################################################################
+
+### Delete product by ID
+# Expected: 204 No Content
+DELETE {{backendUrl}}/api/products/100
+
+### Delete product - Not Found
+# Expected: 404 Not Found
+DELETE {{backendUrl}}/api/products/999999
+
+###############################################################################
+# Backend: Error handling
+###############################################################################
+
+### Invalid endpoint
+# Expected: 404 Not Found
+GET {{backendUrl}}/api/invalid-endpoint
+
+###############################################################################
+# Scraper Service: Endpoints
+###############################################################################
+
+### List sources
+GET {{scraperUrl}}/api/scrape/sources
+
+### List products with available reviews
+GET {{scraperUrl}}/api/scrape/products
+
+### Get reviews for a product (all sources)
+GET {{scraperUrl}}/api/scrape/reviews/1
+
+### Get reviews for a product (specific source)
+GET {{scraperUrl}}/api/scrape/reviews/1?source=amazon
+
+### Get reviews with simulated network delay (1000ms)
+GET {{scraperUrl}}/api/scrape/reviews/1?delay=1000
+
+### Reviews - Unknown product
+# Expected: 404 Not Found with { availableProducts: [...] }
+GET {{scraperUrl}}/api/scrape/reviews/999
+
+### Reviews - Unknown source
+# Expected: 404 Not Found with { availableSources: [...] }
+GET {{scraperUrl}}/api/scrape/reviews/1?source=unknownsite
+
+###############################################################################
+# Notes
+###############################################################################
+# - These endpoints assume services run on localhost with default ports.
+# - When using Docker Compose from this repo, ports are mapped for host access.
+# - In production you may change base URLs to your deployed locations.

@@ -1,18 +1,18 @@
-import express from 'express';
-import dotenv from 'dotenv';
-import cors from 'cors';
-import morgan from 'morgan';
-import productsRouter from './routes/products.js';
-import categoriesRouter from './routes/categories.js';
-import db from './db.js';
-import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
-import { setupStaticServing } from './middleware/staticServing.js';
+import express from "express";
+import dotenv from "dotenv";
+import cors from "cors";
+import morgan from "morgan";
+import productsRouter from "./routes/products.js";
+import categoriesRouter from "./routes/categories.js";
+import db from "./db.js";
+import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
+import { setupStaticServing } from "./middleware/staticServing.js";
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 4000;
-const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || 'http://localhost:5173';
+const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "http://localhost:5173";
 
 // ---------------------------------------------------------------------------
 // Express app setup
@@ -27,7 +27,7 @@ const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || 'http://localhost:5173';
 
 // Request logging (shows HTTP method, URL, status, response time)
 // A logger is essential for debugging and understanding app behavior.
-app.use(morgan('dev'));
+app.use(morgan("dev"));
 
 // Body parsing for JSON payloads
 // Teaching point: express.json() is built-in middleware to parse JSON bodies.
@@ -40,10 +40,12 @@ app.use(express.json());
 // http://localhost:5173). When running both backend and frontend inside
 // containers with a reverse proxy, CORS may not be necessary.
 // CORS means Cross-Origin Resource Sharing.
-app.use(cors({ 
-  origin: FRONTEND_ORIGIN,
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: FRONTEND_ORIGIN,
+    credentials: true,
+  })
+);
 
 // ---------------------------------------------------------------------------
 // Health check
@@ -51,21 +53,22 @@ app.use(cors({
 // Purpose: a lightweight endpoint used by Docker Compose healthchecks and by
 // students to confirm the app is up. Keep it fast and avoid doing heavy work.
 // The endpoint returns a simple DB check (row count) and a timestamp.
-app.get('/health', async (req, res) => {
+app.get("/health", async (req, res) => {
   try {
-    const [rows] = await db.query('SELECT COUNT(*) AS count FROM products');
+    const [rows] = await db.query("SELECT COUNT(*) AS count FROM products");
     const count = rows && rows[0] ? rows[0].count : 0;
-    return res.json({ 
-      status: 'ok', 
-      db: 'connected', 
+    return res.json({
+      status: "ok",
+      db: "connected",
       products: Number(count),
       timestamp: new Date().toISOString(),
     });
   } catch (err) {
-    // Return a concise error object so health checks can detect failure
-    return res.status(500).json({ 
-      status: 'error', 
-      db: 'unavailable', 
+    // Degraded: server is up, but DB is unavailable. Keep HTTP 200 so UIs can
+    // distinguish "backend reachable" vs "database down" without special casing.
+    return res.json({
+      status: "degraded",
+      db: "unavailable",
       error: err.message,
       timestamp: new Date().toISOString(),
     });
@@ -77,8 +80,8 @@ app.get('/health', async (req, res) => {
 // ---------------------------------------------------------------------------
 // Keep API routes mounted after middleware like body parsing/CORS so they
 // receive parsed bodies and the correct CORS headers.
-app.use('/api/products', productsRouter);
-app.use('/api/categories', categoriesRouter);
+app.use("/api/products", productsRouter);
+app.use("/api/categories", categoriesRouter);
 
 // EXTENSION_POINT: ADD MORE ROUTES HERE (e.g. users, auth, orders, ...) AS THE APP GROWS
 
