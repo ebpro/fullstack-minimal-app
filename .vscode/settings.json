@@ -2,17 +2,6 @@
   "sqltools.connections": [
     {
       "previewLimit": 50,
-      "server": "localhost",
-      "port": 3306,
-      "driver": "MySQL",
-      "name": "MySQL - Minimal App (Local)",
-      "database": "minimal_app_db",
-      "username": "appuser",
-      "password": "apppassword",
-      "connectionTimeout": 30
-    },
-    {
-      "previewLimit": 50,
       "server": "mysql",
       "port": 3306,
       "driver": "MySQL",

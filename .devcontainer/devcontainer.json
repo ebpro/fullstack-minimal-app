@@ -105,7 +105,24 @@
           "zsh": {
             "path": "/bin/zsh"
           }
-        }
+        },
+
+        // SQLTools: preconfigure a connection that uses the Docker network host
+        // This runs inside the dev container, so 'mysql' resolves to the MySQL service
+        "sqltools.connections": [
+          {
+            "name": "Dev MySQL (docker network)",
+            "driver": "MySQL",
+            "previewLimit": 50,
+            "server": "mysql",
+            "port": 3306,
+            "database": "minimal_app_db",
+            "username": "appuser",
+            "password": "apppassword",
+            "askForPassword": false,
+            "connectionTimeout": 30
+          }
+        ]
       },
 
       // Extensions to install inside the container
