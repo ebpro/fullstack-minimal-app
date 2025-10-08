@@ -72,6 +72,8 @@
     "vscode": {
       // Workspace settings applied inside the container
       "settings": {
+        // Normalize line endings for consistency across OSes
+        "files.eol": "\n",
         // Editor settings
         "editor.formatOnSave": true,
         "editor.defaultFormatter": "esbenp.prettier-vscode",
@@ -158,14 +160,15 @@
       "installZsh": true,
       "installOhMyZsh": true,
       "upgradePackages": true
-    }
+    },
+    // Cross-platform SSH agent forwarding (avoids mounting ~/.ssh)
+    "ghcr.io/devcontainers/features/ssh-agent:1": {}
   },
 
-  "postCreateCommand": "chmod +x /workspace/.devcontainer/post-create-setup.sh && /workspace/.devcontainer/post-create-setup.sh || true; bash -lc 'echo \"✅ Setup complete — interactive shell started. Run: npm run dev\"; exec /bin/zsh -l'",
+  "postCreateCommand": "bash -lc 'set -e; tmp=/tmp/post-create-setup.sh; tr -d \"\\r\" </workspace/.devcontainer/post-create-setup.sh > \"$tmp\"; chmod +x \"$tmp\"; bash \"$tmp\" || true; echo \"✅ Setup complete — open a new terminal and run: npm run dev\"'",
 
-  // Post-start command: runs every time the container starts
-  // Keep the terminal open by replacing the ephemeral command with an interactive shell.
-  "postStartCommand": "bash -lc 'echo \"🚀 Ready! Run: npm run dev\"; exec /bin/zsh -l'",
+  // Keep the terminal simple and avoid long-running shells in lifecycle hooks
+  "postStartCommand": "bash -lc 'echo \"🚀 Ready! Run: npm run dev\"'",
 
   // Remote user: run VS Code server as this user inside the container
   // Using 'node' user (non-root) for better security
@@ -175,16 +178,16 @@
   "containerEnv": {
     "npm_config_cache": "/home/node/.npm",
     // Git configuration
-    "GIT_EDITOR": "code --wait"
+    "GIT_EDITOR": "code --wait",
+    // Enable cross-platform file watching (useful on Windows/macOS)
+    "CHOKIDAR_USEPOLLING": "true",
+    "WATCHPACK_POLLING": "true"
   },
 
   // Mount the Docker socket so you can run Docker commands inside the container
   // Teaching note: This allows running 'docker compose' commands from inside the dev container
   "mounts": [
-    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
-    // Mount SSH keys for Git authentication (if they exist)
-    "source=${localEnv:HOME}/.ssh,target=/home/node/.ssh,type=bind,consistency=cached",
-    // Mount Git config for seamless Git usage
-    "source=${localEnv:HOME}/.gitconfig,target=/home/node/.gitconfig,type=bind,consistency=cached"
+    // Allow Docker-in-Docker usage for developer convenience
+    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
   ]
 }

@@ -7,22 +7,28 @@
 
 echo "🔧 Post-create setup..."
 
-# Fix permissions quietly
-sudo chown -R node:node /workspace/node_modules 2>/dev/null || true
-sudo chown -R node:node /workspace/backend/node_modules 2>/dev/null || true
-sudo chown -R node:node /workspace/frontend/node_modules 2>/dev/null || true
+# Fix permissions quietly (use sudo only if available)
+if command -v sudo >/dev/null 2>&1; then SUDO=sudo; else SUDO=""; fi
 
+# On Windows hosts, volume mounts can map to root-owned dirs; ensure node owns node_modules
+$SUDO chown -R node:node /workspace/node_modules 2>/dev/null || true
+$SUDO chown -R node:node /workspace/backend/node_modules 2>/dev/null || true
+$SUDO chown -R node:node /workspace/frontend/node_modules 2>/dev/null || true
+
+# When using SSH agent forwarding, ~/.ssh may not exist; ignore errors
 if [ -d "/home/node/.ssh" ]; then
-    sudo chown -R node:node /home/node/.ssh
+    $SUDO chown -R node:node /home/node/.ssh 2>/dev/null || true
 fi
 
 if [ -f "/home/node/.gitconfig" ]; then
-    sudo chown node:node /home/node/.gitconfig
+    $SUDO chown node:node /home/node/.gitconfig 2>/dev/null || true
 fi
 
-# Run Git setup
-chmod +x /workspace/.devcontainer/git-setup.sh
-/workspace/.devcontainer/git-setup.sh || echo "⚠️  Git setup had issues but continuing..."
+# Run Git setup (handle CRLF)
+tmp_git=/tmp/git-setup.sh
+tr -d '\r' </workspace/.devcontainer/git-setup.sh > "$tmp_git"
+chmod +x "$tmp_git"
+"$tmp_git" || echo "⚠️  Git setup had issues but continuing..."
 
 # Install npm dependencies if package.json exists
 if [ -f "/workspace/package.json" ]; then

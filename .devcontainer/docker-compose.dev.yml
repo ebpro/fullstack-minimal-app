@@ -60,10 +60,14 @@ services:
       DB_PASSWORD: apppassword
       # frontend dev server can use this to call the backend
       VITE_BACKEND_URL: http://localhost:4000
+      # Improve file watching on Windows/macOS
+      CHOKIDAR_USEPOLLING: "true"
+      WATCHPACK_POLLING: "true"
     ports:
       - "4000:4000" # backend
       - "5173:5173" # vite frontend
     volumes:
+      # Use cached/consistent options to improve performance on macOS/Windows
       - ..:/workspace:cached
       - backend_node_modules:/workspace/backend/node_modules
       - frontend_node_modules:/workspace/frontend/node_modules

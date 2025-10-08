@@ -177,6 +177,7 @@ Or use SQLTools extension in VS Code (Cmd/Ctrl+Shift+P → "SQLTools: Add New Co
 **Problem**: Docker build errors or timeout
 
 **Solutions**:
+
 - Ensure Docker Desktop is running
 - Check internet connection (Docker pulls images from registry)
 - Try rebuilding: `Dev Containers: Rebuild Container` (Command Palette)
@@ -187,6 +188,7 @@ Or use SQLTools extension in VS Code (Cmd/Ctrl+Shift+P → "SQLTools: Add New Co
 **Problem**: `Error: Port 3306/4000/5173 is already allocated`
 
 **Solutions**:
+
 - Stop conflicting services on your host machine
 - Change ports in `docker-compose.yml` or `devcontainer.json`
 - Find and kill process using port: `lsof -i :3306` (macOS/Linux) or `netstat -ano | findstr :3306` (Windows)
@@ -196,9 +198,11 @@ Or use SQLTools extension in VS Code (Cmd/Ctrl+Shift+P → "SQLTools: Add New Co
 **Problem**: Code changes don't trigger automatic reload
 
 **Solutions**:
+
 - Check volume mounts in `docker-compose.yml` are correct
 - Restart the dev server (Ctrl+C and `npm run dev` again)
-- On Windows: Ensure WSL 2 backend is enabled in Docker Desktop
+- On Windows: Ensure WSL 2 backend is enabled in Docker Desktop (Settings → General)
+- We've enabled polling watchers (CHOKIDAR_USEPOLLING, WATCHPACK_POLLING) to improve change detection on Windows shares
 - Try rebuilding container
 
 ### MySQL Connection Refused
@@ -217,15 +221,20 @@ Or use SQLTools extension in VS Code (Cmd/Ctrl+Shift+P → "SQLTools: Add New Co
 
 **Solutions**:
 - The container runs as user `node` (non-root)
+- Our post-create script attempts to chown `node_modules` to `node`. On Windows/macOS this is best-effort and usually harmless if it fails.
+- On Windows, prefer WSL 2 backend in Docker Desktop. Avoid placing the repo under a Windows network share.
 - Check file ownership: `ls -la`
-- If needed, fix permissions: `sudo chown -R node:node /usr/src/app`
-- On host: ensure project directory has correct permissions
+- If needed, inside the container: `sudo chown -R node:node /workspace` (sudo may not be required)
 
 ### Git Authentication Issues
 
 **Problem**: Git asks for credentials repeatedly or SSH authentication fails
 
 **Solutions**:
+- We use SSH Agent Forwarding via VS Code, so you don't need to mount `~/.ssh` into the container.
+- Ensure your SSH agent is running and has keys loaded on the host.
+   - macOS: `ssh-add -l` should list your key.
+   - Windows: Use OpenSSH Agent or Pageant; VS Code forwards the agent socket automatically.
 - **For HTTPS repos**: Git will cache credentials for 1 hour. Use a personal access token instead of password
 - **For SSH repos**: Ensure your SSH keys exist in `~/.ssh/` on your host machine
 - Check Git configuration: `git config --global --list`
