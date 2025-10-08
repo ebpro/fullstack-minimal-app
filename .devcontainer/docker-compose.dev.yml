@@ -11,8 +11,6 @@
 # - DevContainer features (Node.js, Git, utilities) require Debian/Ubuntu base images
 # ==============================================================================
 
-version: '3.8'
-
 networks:
   minimal_app_net:
     driver: bridge

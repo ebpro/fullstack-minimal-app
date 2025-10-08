@@ -49,24 +49,30 @@ See [LEARNING_NOTES.md](./LEARNING_NOTES.md) for detailed learning objectives.
 
 ### Prerequisites
 
-- If possible install Docker Desktop (docker.com) for easiest setup
-- Alternatively, install Node.js 22+ (nodejs.org) and MySQL 8.0+ locally. Create a MySQL database and user as per `db/init.sql` (in code see below).
+- Recommended for all students for easiest setup.  
+  - Install git (http://git-scm.com) with default options
+  - Install Docker Desktop (https://docker.com)  **Remove existing MySQL installations to avoid port conflicts.**
+  - Install VS Code (https://code.visualstudio.com)
+  
+- Alternatively, if you cannot use docker it will need more manual setup:
+  - install Node.js 22+ (https://nodejs.org)
+  - MySQL 8.0+ locally
+  - Create a MySQL database and user as per `db/init.sql` (in code see below).
 
 ### Get the Code
 
 Get the source code locally:
 
-- Clone the Git repository using the VS Code UI (Recommended):
+- Clone the Git repository using the VS Code UI (**Recommended**):
   - View > Command Palette… → type and select “Git: Clone” (or on the Welcome page click “Clone Git Repository…”)
-  - Paste: `git@github.com:ebpro/fullstack-minimal-app.git`
+  - Paste: `https://github.com/ebpro/fullstack-minimal-app.git`
   - Choose a destination folder, then click “Open” when prompted
-  - Tip: If you don’t have SSH keys set up, choose the HTTPS option in the dialog
-
+  - If docker is installed, VS Code will prompt to reopen in container - **accept this**
 - Or download ZIP and extract:
   - https://github.com/ebpro/fullstack-minimal-app/archive/refs/heads/develop.zip
   - `cd fullstack-minimal-app-develop/`
 
-### To test the app quickly (No setup)
+### To test the app quickly (No setup, no needed if use Docker and Dev Containers)
 
 Run the following command in the application directory to start the app:
 
