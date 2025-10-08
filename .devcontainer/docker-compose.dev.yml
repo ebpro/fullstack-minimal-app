@@ -39,7 +39,8 @@ services:
     networks:
       - minimal_app_net
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u ${MYSQL_USER} -p${MYSQL_PASSWORD} || exit 1"]
+      # Use container env vars; escape $ so Compose doesn't expand on the host
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u $${MYSQL_USER} -p$${MYSQL_PASSWORD} || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5

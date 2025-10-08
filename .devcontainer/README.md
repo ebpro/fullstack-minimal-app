@@ -116,6 +116,7 @@ The dev container automatically installs these VS Code extensions:
 - **GitLens**: Enhanced Git features (blame, history, etc.)
 
 ### Utilities
+
 - **Path Intellisense**: Auto-complete file paths in imports
 - **Auto Rename Tag**: Rename paired HTML/JSX tags together
 - **Tailwind CSS IntelliSense**: Tailwind class suggestions
@@ -210,6 +211,7 @@ Or use SQLTools extension in VS Code (Cmd/Ctrl+Shift+P → "SQLTools: Add New Co
 **Problem**: Backend can't connect to MySQL
 
 **Solutions**:
+
 - Wait for MySQL healthcheck to complete: `docker compose ps` (should show "healthy")
 - Check environment variables in `docker-compose.yml` match your backend `.env`
 - View MySQL logs: `docker compose logs mysql`
@@ -220,6 +222,7 @@ Or use SQLTools extension in VS Code (Cmd/Ctrl+Shift+P → "SQLTools: Add New Co
 **Problem**: `EACCES` or permission denied errors
 
 **Solutions**:
+
 - The container runs as user `node` (non-root)
 - Our post-create script attempts to chown `node_modules` to `node`. On Windows/macOS this is best-effort and usually harmless if it fails.
 - On Windows, prefer WSL 2 backend in Docker Desktop. Avoid placing the repo under a Windows network share.
@@ -231,10 +234,11 @@ Or use SQLTools extension in VS Code (Cmd/Ctrl+Shift+P → "SQLTools: Add New Co
 **Problem**: Git asks for credentials repeatedly or SSH authentication fails
 
 **Solutions**:
+
 - We use SSH Agent Forwarding via VS Code, so you don't need to mount `~/.ssh` into the container.
 - Ensure your SSH agent is running and has keys loaded on the host.
-   - macOS: `ssh-add -l` should list your key.
-   - Windows: Use OpenSSH Agent or Pageant; VS Code forwards the agent socket automatically.
+  - macOS: `ssh-add -l` should list your key.
+  - Windows: Use OpenSSH Agent or Pageant; VS Code forwards the agent socket automatically.
 - **For HTTPS repos**: Git will cache credentials for 1 hour. Use a personal access token instead of password
 - **For SSH repos**: Ensure your SSH keys exist in `~/.ssh/` on your host machine
 - Check Git configuration: `git config --global --list`

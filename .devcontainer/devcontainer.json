@@ -160,9 +160,7 @@
       "installZsh": true,
       "installOhMyZsh": true,
       "upgradePackages": true
-    },
-    // Cross-platform SSH agent forwarding (avoids mounting ~/.ssh)
-    "ghcr.io/devcontainers/features/ssh-agent:1": {}
+    }
   },
 
   "postCreateCommand": "bash -lc 'set -e; tmp=/tmp/post-create-setup.sh; tr -d \"\\r\" </workspace/.devcontainer/post-create-setup.sh > \"$tmp\"; chmod +x \"$tmp\"; bash \"$tmp\" || true; echo \"✅ Setup complete — open a new terminal and run: npm run dev\"'",
@@ -181,13 +179,17 @@
     "GIT_EDITOR": "code --wait",
     // Enable cross-platform file watching (useful on Windows/macOS)
     "CHOKIDAR_USEPOLLING": "true",
-    "WATCHPACK_POLLING": "true"
+    "WATCHPACK_POLLING": "true",
+    // SSH agent socket inside the container (mounted below)
+    "SSH_AUTH_SOCK": "/run/ssh-agent.sock"
   },
 
   // Mount the Docker socket so you can run Docker commands inside the container
   // Teaching note: This allows running 'docker compose' commands from inside the dev container
   "mounts": [
-    // Allow Docker-in-Docker usage for developer convenience
-    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+    // Allow Docker commands from inside the dev container
+    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
+    // Cross-platform SSH agent forwarding (Docker Desktop provides this socket on macOS/Windows)
+    "source=/run/host-services/ssh-auth.sock,target=/run/ssh-agent.sock,type=bind"
   ]
 }
